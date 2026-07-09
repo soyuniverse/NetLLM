@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NETLLM_DIR="${NETLLM_DIR:-/workspace/NetLLM}"
+NETLLM_DIR="${NETLLM_DIR:-/workspace/NetLLM-source}"
 ENV_NAME="${ENV_NAME:-vp_netllm}"
 ENV_PREFIX="${ENV_PREFIX:-/venv/$ENV_NAME}"
 

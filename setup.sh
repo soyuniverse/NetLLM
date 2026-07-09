@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WORKDIR="${WORKDIR:-/workspace}"
-NETLLM_DIR="${NETLLM_DIR:-$WORKDIR/NetLLM}"
+NETLLM_DIR="${NETLLM_DIR:-$WORKDIR/NetLLM-source}"
 LOG_DIR="${LOG_DIR:-$WORKDIR/research_logs}"
 ENV_NAME="${ENV_NAME:-vp_netllm}"
 ENV_PREFIX="${ENV_PREFIX:-/venv/$ENV_NAME}"
@@ -17,7 +17,7 @@ mkdir -p "$WORKDIR" "$LOG_DIR"
 
 if [ "$(realpath -m "$SCRIPT_DIR")" = "$(realpath -m "$NETLLM_DIR")" ]; then
   echo "ERROR: wrapper repo path conflicts with NETLLM_DIR: $NETLLM_DIR"
-  echo "Clone this wrapper repo into a separate path, for example: /workspace/netllm-vp-setup"
+  echo "Set NETLLM_DIR to a different path, for example: /workspace/NetLLM-source"
   exit 1
 fi
 

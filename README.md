@@ -14,12 +14,12 @@
 
 ## 설치
 
-새 인스턴스에서 wrapper repo를 clone한 뒤 실행합니다. wrapper repo는 `/workspace/NetLLM`이 아닌 별도 디렉토리에 두는 것을 권장합니다. `setup.sh`가 원본 NetLLM을 `/workspace/NetLLM`에 clone합니다.
+새 인스턴스에서 setup repo를 clone한 뒤 실행합니다. setup repo는 `/workspace/NetLLM`에 둬도 됩니다. `setup.sh`가 원본 NetLLM 코드는 `/workspace/NetLLM-source`에 따로 clone합니다.
 
 ```bash
 cd /workspace
-git clone <YOUR_SETUP_REPO_URL> netllm-vp-setup
-cd netllm-vp-setup
+git clone <YOUR_SETUP_REPO_URL> NetLLM
+cd NetLLM
 bash setup.sh
 ```
 
@@ -31,7 +31,7 @@ bash setup.sh
 - conda env `/venv/vp_netllm` 생성 및 Python `3.8.10` 설치
 - `torch==2.1.0` cu118 설치
 - `requirements-vp.txt` 설치
-- `https://github.com/duowuyms/NetLLM.git`를 `/workspace/NetLLM`에 clone
+- `https://github.com/duowuyms/NetLLM.git`를 `/workspace/NetLLM-source`에 clone
 - commit `105bcf070f2bec808f7b14f8f5a953de6e4e6e54` checkout
 - torch/cuda, `cv2`, `yacs` import 확인
 
@@ -63,7 +63,7 @@ Python, pip, torch, CUDA 사용 가능 여부, GPU 이름, `cv2`, `yacs`, NetLLM
 bash scripts/run_vp_regression_cpu.sh
 ```
 
-`/workspace/NetLLM/viewport_prediction`에서 Jin2022 regression CPU test를 실행하고 로그를 `logs/` 아래에 저장합니다.
+`/workspace/NetLLM-source/viewport_prediction`에서 Jin2022 regression CPU test를 실행하고 로그를 `logs/` 아래에 저장합니다.
 
 주의: clone 직후 VP data 디렉토리가 비어 있거나 데이터셋이 없으면 baseline 실행은 실패할 수 있습니다. 이건 숨길 문제가 아니라 데이터 준비가 필요한 정상적인 실패입니다.
 
@@ -78,7 +78,7 @@ bash scripts/run_vp_gpt2_adapt_e1.sh
 모니터링:
 
 ```bash
-tail -f /workspace/NetLLM/viewport_prediction/logs/<LOG_FILE>
+tail -f /workspace/NetLLM-source/viewport_prediction/logs/<LOG_FILE>
 watch -n 2 nvidia-smi
 ```
 
