@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.conda/
+conda/
+site-packages/
+
+# Logs
+logs/
+research_logs/
+*.log
+*.tgz
+
+# NetLLM generated outputs
+NetLLM/viewport_prediction/logs/
+NetLLM/viewport_prediction/data/ft_plms/
+NetLLM/viewport_prediction/data/results/
+NetLLM/viewport_prediction/data/images/
+NetLLM/viewport_prediction/data/image_features/
+
+# Model/checkpoint files
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+
+# Dataset/cache
+data/
+datasets/
+.cache/
+huggingface/
