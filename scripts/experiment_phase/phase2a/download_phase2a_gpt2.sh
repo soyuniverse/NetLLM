@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="/workspace/NetLLM"
-PYTHON_BIN="/venv/vp_netllm_repro/bin/python"
+PYTHON_BIN="/venv/vp_netllm/bin/python"
 ARTIFACT_ROOT="/workspace/NetLLM-artifacts"
 HF_CACHE="$ARTIFACT_ROOT/hf_cache"
 TARGET="$ARTIFACT_ROOT/plms/gpt2/base"

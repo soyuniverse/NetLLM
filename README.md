@@ -4,12 +4,13 @@
 
 ## Vast.ai 권장 환경
 
-- Template: `vastai/pytorch_cuda-12.9.2-auto/jupyter`
+- Template image: `pytorch/pytorch:2.2.0-cuda12.1-cudnn8-devel`
 - GPU: RTX 4090 24GB 1장
-- 이전 확인 환경:
-  - Driver `575.57.08`
-  - CUDA driver API `12.9`
-  - `nvcc` CUDA `12.8`
+- 팀 표준 환경:
+  - CUDA Toolkit: `12.1` (`nvcc`)
+  - PyTorch: `2.2.0+cu121`
+  - torchvision: `0.17.0+cu121`
+  - torchaudio: `2.2.0+cu121`
   - conda: `/opt/miniforge3/condabin/conda`
 
 ## 설치
@@ -29,11 +30,11 @@ bash setup.sh
 - Vast.ai/GPU/CUDA/디스크 정보를 `00_vast_env_check.txt`에 기록
 - Codex CLI/Jupyter/VS Code Remote 관련 상태를 확인하고 `02_dev_tools_check.txt`에 기록
 - conda env `/venv/vp_netllm` 생성 및 Python `3.8.10` 설치
-- `torch==2.1.0` cu118 설치
+- `torch==2.2.0`, `torchvision==0.17.0`, `torchaudio==2.2.0` cu121 wheel 설치
 - `requirements-vp.txt` 설치
 - `https://github.com/duowuyms/NetLLM.git`를 `/workspace/NetLLM-source`에 clone
 - commit `105bcf070f2bec808f7b14f8f5a953de6e4e6e54` checkout
-- torch/cuda, `cv2`, `yacs` import 확인
+- `nvcc` CUDA 12.1, torch/cu121, `cv2`, `yacs` 확인
 
 기본값으로 Codex CLI 설치를 시도합니다. 개발 도구 확인/설치를 건너뛰려면 다음처럼 실행합니다.
 

@@ -7,13 +7,14 @@ VP_ROOT="$SOURCE_ROOT/viewport_prediction"
 PYTHON_BIN="/venv/vp_netllm/bin/python"
 ARTIFACT_ROOT="/workspace/NetLLM-artifacts"
 ARTIFACT_PATH="$ARTIFACT_ROOT/plms/gpt2/base"
-RUNTIME_ROOT="$PROJECT_ROOT/experiments/vp/phase2b_runtime"
-SCRIPT_PATH="$PROJECT_ROOT/scripts/experiment_phase/phase2b/run_phase2b_vp_forward.py"
-TRACE_PATH="$RUNTIME_ROOT/phase2b_tensor_trace.json"
-LOG_PATH="$RUNTIME_ROOT/phase2b_forward.log"
+RUNTIME_ROOT="$PROJECT_ROOT/experiments/vp/phase3a_runtime"
+RUNNER="$PROJECT_ROOT/scripts/experiment_phase/phase3a/run_phase3a_identity_equivalence.py"
+OUTPUT_PATH="$RUNTIME_ROOT/identity_equivalence.json"
+LOG_PATH="$RUNTIME_ROOT/identity_equivalence.log"
+TEST_LOG_PATH="$RUNTIME_ROOT/tests.log"
+STATUS_PATH="$RUNTIME_ROOT/run_status.txt"
 BEFORE_PATH="$RUNTIME_ROOT/upstream_before.txt"
 AFTER_PATH="$RUNTIME_ROOT/upstream_after.txt"
-STATUS_PATH="$RUNTIME_ROOT/run_status.txt"
 
 artifact_fingerprint() {
     sha256sum \
@@ -39,19 +40,11 @@ record_upstream() {
 }
 
 if [[ -e "$RUNTIME_ROOT" ]]; then
-    echo "ERROR: Phase 2B runtime path already exists; nothing was overwritten: $RUNTIME_ROOT" >&2
+    echo "ERROR: Phase 3A runtime already exists; nothing was overwritten: $RUNTIME_ROOT" >&2
     exit 2
 fi
-if [[ ! -x "$PYTHON_BIN" ]]; then
-    echo "ERROR: Python not found: $PYTHON_BIN" >&2
-    exit 2
-fi
-if [[ ! -f "$SCRIPT_PATH" ]]; then
-    echo "ERROR: Python runner not found: $SCRIPT_PATH" >&2
-    exit 2
-fi
-if [[ ! -d "$ARTIFACT_PATH" ]]; then
-    echo "ERROR: GPT-2 artifact not found: $ARTIFACT_PATH" >&2
+if [[ ! -x "$PYTHON_BIN" || ! -f "$RUNNER" || ! -d "$ARTIFACT_PATH" ]]; then
+    echo "ERROR: required Python, runner, or GPT-2 artifact is missing" >&2
     exit 2
 fi
 
@@ -59,7 +52,7 @@ before_status="$(git -C "$SOURCE_ROOT" status --porcelain=v2 --untracked-files=a
 before_diff="$(git -C "$SOURCE_ROOT" diff --name-status HEAD)"
 before_pycache="$(find "$SOURCE_ROOT" -type d -name __pycache__ | wc -l)"
 if [[ -n "$before_status" || -n "$before_diff" || "$before_pycache" -ne 0 ]]; then
-    echo "ERROR: upstream is not clean before Phase 2B" >&2
+    echo "ERROR: upstream is not clean before Phase 3A" >&2
     exit 2
 fi
 
@@ -75,15 +68,23 @@ export TRANSFORMERS_OFFLINE=1
 export HF_HUB_DISABLE_TELEMETRY=1
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONNOUSERSITE=1
-export PYTHONPATH="$VP_ROOT"
+export PYTHONPATH="$PROJECT_ROOT/src:$VP_ROOT"
 export HTTP_PROXY="http://127.0.0.1:9"
 export HTTPS_PROXY="http://127.0.0.1:9"
 export ALL_PROXY="socks5://127.0.0.1:9"
 
 start_epoch="$(date +%s)"
 cd "$VP_ROOT" || exit 2
-"$PYTHON_BIN" -B "$SCRIPT_PATH" --output "$TRACE_PATH" 2>&1 | tee "$LOG_PATH"
-python_status=${PIPESTATUS[0]}
+"$PYTHON_BIN" -B "$RUNNER" --output "$OUTPUT_PATH" 2>&1 | tee "$LOG_PATH"
+runner_status=${PIPESTATUS[0]}
+
+test_status=not_started
+if [[ $runner_status -eq 0 ]]; then
+    cd "$PROJECT_ROOT" || exit 2
+    "$PYTHON_BIN" -B -m unittest discover -s tests/phase3a -p 'test_*.py' -v \
+        2>&1 | tee "$TEST_LOG_PATH"
+    test_status=${PIPESTATUS[0]}
+fi
 end_epoch="$(date +%s)"
 
 record_upstream "$AFTER_PATH"
@@ -93,7 +94,10 @@ after_pycache="$(find "$SOURCE_ROOT" -type d -name __pycache__ | wc -l)"
 after_freeze_hash="$($PYTHON_BIN -m pip freeze | sha256sum | cut -d' ' -f1)"
 after_artifact_hash="$(artifact_fingerprint)"
 
-final_status=$python_status
+final_status=$runner_status
+if [[ "$test_status" != "not_started" && "$test_status" -ne 0 && $final_status -eq 0 ]]; then
+    final_status=6
+fi
 upstream_clean=yes
 environment_unchanged=yes
 artifact_unchanged=yes
@@ -111,7 +115,8 @@ if [[ "$before_artifact_hash" != "$after_artifact_hash" ]]; then
 fi
 
 {
-    echo "python_exit_code=$python_status"
+    echo "runner_exit_code=$runner_status"
+    echo "test_exit_code=$test_status"
     echo "final_exit_code=$final_status"
     echo "wall_elapsed_seconds=$((end_epoch - start_epoch))"
     echo "upstream_clean_after=$upstream_clean"
@@ -121,15 +126,15 @@ fi
     echo "freeze_hash_after=$after_freeze_hash"
     echo "artifact_fingerprint_before=$before_artifact_hash"
     echo "artifact_fingerprint_after=$after_artifact_hash"
-    echo "trace_path=$TRACE_PATH"
-    echo "log_path=$LOG_PATH"
+    echo "output_path=$OUTPUT_PATH"
 } > "$STATUS_PATH"
 
-echo "PHASE2B_PYTHON_EXIT_CODE=$python_status"
-echo "PHASE2B_FINAL_EXIT_CODE=$final_status"
-echo "PHASE2B_UPSTREAM_CLEAN_AFTER=$upstream_clean"
-echo "PHASE2B_ENVIRONMENT_UNCHANGED=$environment_unchanged"
-echo "PHASE2B_ARTIFACT_UNCHANGED=$artifact_unchanged"
-echo "PHASE2B_TRACE_PATH=$TRACE_PATH"
+echo "PHASE3A_RUNNER_EXIT_CODE=$runner_status"
+echo "PHASE3A_TEST_EXIT_CODE=$test_status"
+echo "PHASE3A_FINAL_EXIT_CODE=$final_status"
+echo "PHASE3A_UPSTREAM_CLEAN_AFTER=$upstream_clean"
+echo "PHASE3A_ENVIRONMENT_UNCHANGED=$environment_unchanged"
+echo "PHASE3A_ARTIFACT_UNCHANGED=$artifact_unchanged"
+echo "PHASE3A_OUTPUT_PATH=$OUTPUT_PATH"
 
 exit "$final_status"

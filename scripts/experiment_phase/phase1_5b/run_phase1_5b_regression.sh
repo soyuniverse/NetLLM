@@ -4,7 +4,7 @@ set -uo pipefail
 PROJECT_ROOT="/workspace/NetLLM"
 SOURCE_ROOT="/workspace/NetLLM-source"
 VP_ROOT="$SOURCE_ROOT/viewport_prediction"
-PYTHON_BIN="/venv/vp_netllm_repro/bin/python"
+PYTHON_BIN="/venv/vp_netllm/bin/python"
 OUTPUT_ROOT="$PROJECT_ROOT/experiments/vp/phase1_5b_runtime"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 LOG_DIR="$OUTPUT_ROOT/logs"

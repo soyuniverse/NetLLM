@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PYTHON_BIN="/venv/vp_netllm_repro/bin/python"
+PYTHON_BIN="/venv/vp_netllm/bin/python"
 VP_ROOT="/workspace/NetLLM-source/viewport_prediction"
-LEGACY_SITE="/venv/vp_netllm/lib/python3.8/site-packages"
+LEGACY_SITE="/venv/vp_netllm_repro/lib/python3.8/site-packages"
 OVERLAY_SITE="/venv/vp_netllm_plmtest/lib/python3.8/site-packages"
+EXPECTED_CUDA_TOOLKIT="12.1"
+
+if ! command -v nvcc >/dev/null 2>&1; then
+    echo "ERROR: nvcc not found; expected CUDA $EXPECTED_CUDA_TOOLKIT-devel" >&2
+    exit 2
+fi
+actual_cuda_toolkit="$(nvcc --version | sed -n 's/.*release \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' | head -1)"
+if [[ "$actual_cuda_toolkit" != "$EXPECTED_CUDA_TOOLKIT" ]]; then
+    echo "ERROR: CUDA toolkit mismatch: expected $EXPECTED_CUDA_TOOLKIT, got ${actual_cuda_toolkit:-unknown}" >&2
+    exit 2
+fi
+nvcc --version
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
     echo "ERROR: reproducible environment Python not found: $PYTHON_BIN" >&2
@@ -23,8 +35,8 @@ import sys
 
 legacy_site, overlay_site = sys.argv[1:]
 assert sys.version_info[:3] == (3, 8, 10), sys.version
-assert sys.prefix == "/venv/vp_netllm_repro", sys.prefix
-assert sys.base_prefix == "/venv/vp_netllm_repro", sys.base_prefix
+assert sys.prefix == "/venv/vp_netllm", sys.prefix
+assert sys.base_prefix == "/venv/vp_netllm", sys.base_prefix
 assert not site.ENABLE_USER_SITE
 assert legacy_site not in sys.path, sys.path
 assert overlay_site not in sys.path, sys.path
@@ -42,7 +54,9 @@ echo "===== Exact package versions ====="
 from importlib.metadata import version
 
 expected = {
-    "torch": "2.1.0+cu118",
+    "torch": "2.2.0+cu121",
+    "torchvision": "0.17.0+cu121",
+    "torchaudio": "2.2.0+cu121",
     "transformers": "4.34.1",
     "peft": "0.6.2",
     "accelerate": "0.24.1",

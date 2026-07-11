@@ -10,6 +10,12 @@ NETLLM_REPO="${NETLLM_REPO:-https://github.com/duowuyms/NetLLM.git}"
 NETLLM_COMMIT="${NETLLM_COMMIT:-105bcf070f2bec808f7b14f8f5a953de6e4e6e54}"
 INSTALL_DEV_TOOLS="${INSTALL_DEV_TOOLS:-1}"
 INSTALL_CODEX_CLI="${INSTALL_CODEX_CLI:-1}"
+VP_TORCH_VERSION="${VP_TORCH_VERSION:-2.2.0}"
+VP_TORCHVISION_VERSION="${VP_TORCHVISION_VERSION:-0.17.0}"
+VP_TORCHAUDIO_VERSION="${VP_TORCHAUDIO_VERSION:-2.2.0}"
+VP_CUDA_TOOLKIT_VERSION="${VP_CUDA_TOOLKIT_VERSION:-12.1}"
+VP_TORCH_CUDA_RUNTIME="${VP_TORCH_CUDA_RUNTIME:-12.1}"
+VP_TORCH_INDEX_URL="${VP_TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -50,6 +56,19 @@ echo "===== Recording Vast.ai environment ====="
   echo "===== MEMORY ====="
   free -h
 } | tee "$LOG_DIR/00_vast_env_check.txt"
+
+echo "===== Verifying CUDA devel toolkit ====="
+if ! command -v nvcc >/dev/null 2>&1; then
+  echo "ERROR: nvcc not found; use a CUDA $VP_CUDA_TOOLKIT_VERSION-devel image."
+  exit 1
+fi
+actual_cuda_toolkit="$(nvcc --version | sed -n 's/.*release \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' | head -1)"
+if [ "$actual_cuda_toolkit" != "$VP_CUDA_TOOLKIT_VERSION" ]; then
+  echo "ERROR: CUDA toolkit mismatch: expected $VP_CUDA_TOOLKIT_VERSION, got ${actual_cuda_toolkit:-unknown}."
+  echo "Use pytorch/pytorch:2.2.0-cuda12.1-cudnn8-devel or an equivalent CUDA 12.1-devel image."
+  exit 1
+fi
+echo "CUDA toolkit: $actual_cuda_toolkit"
 
 if [ "$INSTALL_DEV_TOOLS" = "1" ]; then
   echo "===== Installing/checking developer tools ====="
@@ -115,12 +134,21 @@ echo "===== Python check ====="
 python --version
 which python
 
-echo "===== Installing PyTorch 2.1.0 cu118 ====="
+echo "===== Installing PyTorch $VP_TORCH_VERSION with CUDA $VP_TORCH_CUDA_RUNTIME wheels ====="
+echo "NOTE: The CUDA devel toolkit comes from the Vast/Docker template; pip installs the matching PyTorch runtime wheels only."
 python -m pip install --upgrade pip
-python -m pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cu118
+python -m pip install \
+  "torch==$VP_TORCH_VERSION" \
+  "torchvision==$VP_TORCHVISION_VERSION" \
+  "torchaudio==$VP_TORCHAUDIO_VERSION" \
+  --index-url "$VP_TORCH_INDEX_URL"
 
 echo "===== Installing VP requirements ====="
 python -m pip install -r "$SCRIPT_DIR/requirements-vp.txt"
+
+echo "===== Recording resolved Python dependencies ====="
+python -m pip check | tee "$LOG_DIR/03_pip_check.txt"
+python -m pip freeze | tee "$LOG_DIR/04_pip_freeze.txt"
 
 echo "===== Cloning or updating NetLLM ====="
 cd "$WORKDIR"
@@ -142,12 +170,28 @@ git checkout "$NETLLM_COMMIT"
 git rev-parse HEAD | tee "$LOG_DIR/01_netllm_commit.txt"
 
 echo "===== Verifying Python imports and GPU ====="
-python - <<'PY'
+python - "$VP_TORCH_VERSION" "$VP_TORCHVISION_VERSION" "$VP_TORCHAUDIO_VERSION" "$VP_TORCH_CUDA_RUNTIME" <<'PY'
+import sys
 import torch
+import torchvision
+import torchaudio
 import cv2
 import yacs
 
+expected_torch, expected_vision, expected_audio, expected_cuda = sys.argv[1:]
+actual_torch = torch.__version__.split("+", 1)[0]
+if actual_torch != expected_torch:
+    raise RuntimeError(f"torch version mismatch: expected {expected_torch}, got {torch.__version__}")
+if torchvision.__version__.split("+", 1)[0] != expected_vision:
+    raise RuntimeError(f"torchvision version mismatch: expected {expected_vision}, got {torchvision.__version__}")
+if torchaudio.__version__.split("+", 1)[0] != expected_audio:
+    raise RuntimeError(f"torchaudio version mismatch: expected {expected_audio}, got {torchaudio.__version__}")
+if torch.version.cuda != expected_cuda:
+    raise RuntimeError(f"PyTorch CUDA runtime mismatch: expected {expected_cuda}, got {torch.version.cuda}")
+
 print("torch:", torch.__version__)
+print("torchvision:", torchvision.__version__)
+print("torchaudio:", torchaudio.__version__)
 print("cuda available:", torch.cuda.is_available())
 print("torch cuda version:", torch.version.cuda)
 if torch.cuda.is_available():
