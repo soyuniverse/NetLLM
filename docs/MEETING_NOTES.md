@@ -22,7 +22,7 @@ NetLLM에 LiteVLM의 경량화 모듈을 연결하기 위한 대상 태스크, �
 
 ## 2. 연구 전체 범위
 
-NetLLM의 주요 태스크는 다음과 같다.
+NetLLM의 주요 태스크는 다음과 같다.r
 
 - VP: Viewport Prediction
 - ABR: Adaptive Bitrate Streaming
