@@ -1,0 +1,8 @@
+torch==2.1.0+cu118
+transformers==4.34.1
+peft==0.6.2
+accelerate==0.24.1
+huggingface-hub==0.17.3
+safetensors==0.5.3
+tokenizers==0.14.1
+
