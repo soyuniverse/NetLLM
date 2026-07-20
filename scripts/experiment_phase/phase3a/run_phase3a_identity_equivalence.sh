@@ -4,7 +4,7 @@ set -uo pipefail
 PROJECT_ROOT="/workspace/NetLLM"
 SOURCE_ROOT="/workspace/NetLLM-source"
 VP_ROOT="$SOURCE_ROOT/viewport_prediction"
-PYTHON_BIN="/venv/vp_netllm/bin/python"
+PYTHON_BIN="/venv/vp_netllm_repro/bin/python"
 ARTIFACT_ROOT="/workspace/NetLLM-artifacts"
 ARTIFACT_PATH="$ARTIFACT_ROOT/plms/gpt2/base"
 RUNTIME_ROOT="$PROJECT_ROOT/experiments/vp/phase3a_runtime"

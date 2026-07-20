@@ -102,8 +102,12 @@ def max_difference(left, right):
 
     difference = (left - right).abs()
     flat_index = int(difference.argmax().item())
-    index = list(torch.unravel_index(torch.tensor(flat_index), difference.shape))
-    index = [int(item.item()) for item in index]
+    index = []
+    remaining = flat_index
+    for size in reversed(tuple(int(value) for value in difference.shape)):
+        index.append(remaining % size)
+        remaining //= size
+    index.reverse()
     return {
         "max_absolute_difference": float(difference.max().item()),
         "max_difference_index": index,
