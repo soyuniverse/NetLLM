@@ -1,0 +1,69 @@
+{
+  "audit_timestamp_utc": "2026-07-26T07:11:28Z",
+  "environment_recovery_success": true,
+  "hostname": "29d90f362497",
+  "pwd": "/root/NetLLM",
+  "paths": {
+    "project_root": "/root/NetLLM",
+    "source_root": "/root/NetLLM-source",
+    "python_executable": "/root/venvs/vp_netllm_repro/bin/python",
+    "python_environment": "/root/venvs/vp_netllm_repro",
+    "artifact_path": "/root/NetLLM-artifacts/plms/gpt2/base",
+    "artifact_cache": "/root/NetLLM-artifacts/hf_cache",
+    "jin2022_dataset": "/root/NetLLM-source/viewport_prediction/data/viewports/Jin2022",
+    "phase3a_source": "/root/NetLLM/src/netllm_litevlm"
+  },
+  "runtime": {
+    "python_version": "3.8.10",
+    "torch_version": "2.1.0+cu118",
+    "torch_cuda_version": "11.8",
+    "cuda_toolkit_version": "12.1",
+    "cuda_toolkit_build": "V12.1.105",
+    "cuda_available": true,
+    "gpu_name": "NVIDIA GeForce RTX 4090",
+    "gpu_memory_mib": 24564,
+    "nvidia_driver": "560.35.03",
+    "transformers_version": "4.34.1",
+    "peft_version": "0.6.2",
+    "accelerate_version": "0.24.1",
+    "huggingface_hub_version": "0.17.3",
+    "pip_check_success": true,
+    "pip_freeze_sha256": "731a5031a3fb94909d541db8b66a41299d0977716e09d26eaa682ec3154d0311",
+    "pip_freeze_sorted_sha256": "1ca86448bc2eb262ce840f4801eea898234f40cbd3384451bf640c56c590947f"
+  },
+  "upstream": {
+    "origin": "https://github.com/duowuyms/NetLLM.git",
+    "commit": "105bcf070f2bec808f7b14f8f5a953de6e4e6e54",
+    "detached_head": true,
+    "status_before": "",
+    "status_after": "",
+    "diff_before": "",
+    "diff_after": "",
+    "pycache_count_before": 0,
+    "pycache_count_after": 0,
+    "clean_before": true,
+    "clean_after": true
+  },
+  "artifact": {
+    "repository": "openai-community/gpt2-medium",
+    "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+    "file_count": 9,
+    "total_size_bytes": 1522851760,
+    "content_manifest_sha256_before": "f3fdcf85dd2a8d38b329048ebb0349bcc94e1c6a04aa08ec20a4c0334ed74f14",
+    "content_manifest_sha256_after": "f3fdcf85dd2a8d38b329048ebb0349bcc94e1c6a04aa08ec20a4c0334ed74f14",
+    "matches_phase2a_file_manifest": true
+  },
+  "dataset": {
+    "name": "Jin2022",
+    "cooked_csv_tracked_count": 2268,
+    "required_sample_tracked": true,
+    "required_sample": "/root/NetLLM-source/viewport_prediction/data/viewports/Jin2022/video4/5Hz/simple_5Hz_user83.csv"
+  },
+  "integrity_unchanged_after_execution": {
+    "upstream_commit": true,
+    "upstream_status_and_diff": true,
+    "upstream_pycache": true,
+    "pip_freeze_hash": true,
+    "artifact_checksum": true
+  }
+}

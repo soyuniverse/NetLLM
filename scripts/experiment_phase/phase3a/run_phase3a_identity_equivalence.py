@@ -10,11 +10,20 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 
-PROJECT_ROOT = Path("/workspace/NetLLM")
-SOURCE_ROOT = Path("/workspace/NetLLM-source")
+PROJECT_ROOT = Path(
+    os.environ.get("NETLLM_PROJECT_ROOT", Path(__file__).resolve().parents[3])
+).resolve()
+SOURCE_ROOT = Path(
+    os.environ.get("NETLLM_SOURCE_ROOT", PROJECT_ROOT.parent / "NetLLM-source")
+).resolve()
 VP_ROOT = SOURCE_ROOT / "viewport_prediction"
 SRC_ROOT = PROJECT_ROOT / "src"
-ARTIFACT_ROOT = Path("/workspace/NetLLM-artifacts/plms")
+ARTIFACT_ROOT = Path(
+    os.environ.get(
+        "NETLLM_ARTIFACT_ROOT",
+        PROJECT_ROOT.parent / "NetLLM-artifacts" / "plms",
+    )
+).resolve()
 ARTIFACT_PATH = ARTIFACT_ROOT / "gpt2/base"
 TOLERANCE = 1e-7
 
@@ -81,9 +90,10 @@ class PathMonitor:
 
 
 def configure_offline_environment():
+    artifact_cache = ARTIFACT_ROOT.parent / "hf_cache"
     values = {
-        "HF_HOME": "/workspace/NetLLM-artifacts/hf_cache",
-        "TRANSFORMERS_CACHE": "/workspace/NetLLM-artifacts/hf_cache",
+        "HF_HOME": str(artifact_cache),
+        "TRANSFORMERS_CACHE": str(artifact_cache),
         "HF_HUB_OFFLINE": "1",
         "TRANSFORMERS_OFFLINE": "1",
         "HF_HUB_DISABLE_TELEMETRY": "1",
@@ -97,17 +107,21 @@ def configure_offline_environment():
     sys.dont_write_bytecode = True
 
 
+def unravel_flat_index(flat_index, shape):
+    result = []
+    remaining = int(flat_index)
+    for size in reversed(tuple(int(v) for v in shape)):
+        result.append(remaining % size)
+        remaining //= size
+    return list(reversed(result))
+
+
 def max_difference(left, right):
     import torch
 
     difference = (left - right).abs()
     flat_index = int(difference.argmax().item())
-    index = []
-    remaining = flat_index
-    for size in reversed(tuple(int(value) for value in difference.shape)):
-        index.append(remaining % size)
-        remaining //= size
-    index.reverse()
+    index = unravel_flat_index(flat_index, difference.shape)
     return {
         "max_absolute_difference": float(difference.max().item()),
         "max_difference_index": index,

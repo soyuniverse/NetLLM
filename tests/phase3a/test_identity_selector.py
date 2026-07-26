@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -5,7 +6,9 @@ from pathlib import Path
 import torch
 
 
-PROJECT_ROOT = Path("/workspace/NetLLM")
+PROJECT_ROOT = Path(
+    os.environ.get("NETLLM_PROJECT_ROOT", Path(__file__).resolve().parents[2])
+).resolve()
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from netllm_litevlm.selectors import IdentitySelector

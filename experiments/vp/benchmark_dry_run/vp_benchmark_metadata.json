@@ -1,0 +1,208 @@
+{
+  "artifact_revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+  "checkpoint": null,
+  "configurations": [
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 1.0,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "baseline_original",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "selected_token_count": 10,
+      "selector_latency": null,
+      "total_inference_latency": null,
+      "type": "original"
+    },
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 1.0,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "identity_keep10",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "selected_token_count": 10,
+      "selector_latency": {
+        "latency_median_ms": 0.008619390428066254,
+        "latency_p95_ms": 0.011909473687410353,
+        "peak_allocated_mib": null,
+        "peak_reserved_mib": null,
+        "repetitions": 100,
+        "warmup_repetitions": 10
+      },
+      "total_inference_latency": null,
+      "type": "identity"
+    },
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 0.8,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "recent_k8",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "selected_token_count": 8,
+      "selector_latency": {
+        "latency_median_ms": 0.019544968381524086,
+        "latency_p95_ms": 0.024080835282802582,
+        "peak_allocated_mib": null,
+        "peak_reserved_mib": null,
+        "repetitions": 100,
+        "warmup_repetitions": 10
+      },
+      "total_inference_latency": null,
+      "type": "recent_k"
+    },
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 0.6,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "recent_k6",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "selected_token_count": 6,
+      "selector_latency": {
+        "latency_median_ms": 0.01951027661561966,
+        "latency_p95_ms": 0.020132563076913353,
+        "peak_allocated_mib": null,
+        "peak_reserved_mib": null,
+        "repetitions": 100,
+        "warmup_repetitions": 10
+      },
+      "total_inference_latency": null,
+      "type": "recent_k"
+    },
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 0.4,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "recent_k4",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "selected_token_count": 4,
+      "selector_latency": {
+        "latency_median_ms": 0.019459985196590424,
+        "latency_p95_ms": 0.021625030785799026,
+        "peak_allocated_mib": null,
+        "peak_reserved_mib": null,
+        "repetitions": 100,
+        "warmup_repetitions": 10
+      },
+      "total_inference_latency": null,
+      "type": "recent_k"
+    },
+    {
+      "gpu_peak_allocated_mib": null,
+      "gpu_peak_reserved_mib": null,
+      "keep_ratio": 0.2,
+      "metric_invalid_reason": "trained checkpoint unavailable",
+      "metric_valid": false,
+      "name": "recent_k2",
+      "original_token_count": 10,
+      "prediction_shape": null,
+      "runtime_measured": false,
+      "selected_indices": [
+        8,
+        9
+      ],
+      "selected_token_count": 2,
+      "selector_latency": {
+        "latency_median_ms": 0.01952890306711197,
+        "latency_p95_ms": 0.02041640691459179,
+        "peak_allocated_mib": null,
+        "peak_reserved_mib": null,
+        "repetitions": 100,
+        "warmup_repetitions": 10
+      },
+      "total_inference_latency": null,
+      "type": "recent_k"
+    }
+  ],
+  "csv_columns": [
+    "model",
+    "checkpoint",
+    "selector",
+    "selected_tokens",
+    "keep_ratio",
+    "mae",
+    "rmse",
+    "mean_angular_error",
+    "test_loss",
+    "latency_median_ms",
+    "latency_p95_ms",
+    "peak_allocated_mib",
+    "peak_reserved_mib",
+    "metric_valid"
+  ],
+  "llama_executed": false,
+  "metric_invalid_reason": "trained checkpoint unavailable",
+  "metric_valid": false,
+  "mode": "dry-run",
+  "model": "openai-community/gpt2-medium",
+  "random_head_metrics_reported": false,
+  "schema_version": 1,
+  "speculative_decoding_executed": false,
+  "training_executed": false
+}

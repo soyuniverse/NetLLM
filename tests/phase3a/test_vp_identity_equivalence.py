@@ -1,11 +1,19 @@
 import json
+import os
 import unittest
 from pathlib import Path
 
 
+PROJECT_ROOT = Path(
+    os.environ.get("NETLLM_PROJECT_ROOT", Path(__file__).resolve().parents[2])
+).resolve()
 RESULT_PATH = Path(
-    "/workspace/NetLLM/experiments/vp/phase3a_runtime/identity_equivalence.json"
-)
+    os.environ.get(
+        "NETLLM_PHASE3A_RESULT",
+        PROJECT_ROOT
+        / "experiments/vp/phase3a_final_runtime/identity_equivalence.json",
+    )
+).resolve()
 
 
 class VPIdentityEquivalenceResultTest(unittest.TestCase):

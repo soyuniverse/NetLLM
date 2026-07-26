@@ -1,0 +1,7 @@
+model,checkpoint,selector,selected_tokens,keep_ratio,mae,rmse,mean_angular_error,test_loss,latency_median_ms,latency_p95_ms,peak_allocated_mib,peak_reserved_mib,metric_valid
+openai-community/gpt2-medium,,baseline_original,10,1.0,,,,,,,,,False
+openai-community/gpt2-medium,,identity_keep10,10,1.0,,,,,,,,,False
+openai-community/gpt2-medium,,recent_k8,8,0.8,,,,,,,,,False
+openai-community/gpt2-medium,,recent_k6,6,0.6,,,,,,,,,False
+openai-community/gpt2-medium,,recent_k4,4,0.4,,,,,,,,,False
+openai-community/gpt2-medium,,recent_k2,2,0.2,,,,,,,,,False

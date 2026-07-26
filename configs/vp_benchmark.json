@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "model": "openai-community/gpt2-medium",
+  "artifact_revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+  "checkpoint": null,
+  "dataset": {
+    "name": "Jin2022",
+    "split": "test",
+    "history_tokens": 10,
+    "future_steps": 20,
+    "frequency_hz": 5,
+    "step": 15
+  },
+  "runtime": {
+    "warmup_repetitions": 5,
+    "repetitions": 20,
+    "selector_warmup_repetitions": 10,
+    "selector_repetitions": 100
+  },
+  "selectors": [
+    {"name": "baseline_original", "type": "original", "keep": 10},
+    {"name": "identity_keep10", "type": "identity", "keep": 10},
+    {"name": "recent_k8", "type": "recent_k", "keep": 8},
+    {"name": "recent_k6", "type": "recent_k", "keep": 6},
+    {"name": "recent_k4", "type": "recent_k", "keep": 4},
+    {"name": "recent_k2", "type": "recent_k", "keep": 2}
+  ]
+}
