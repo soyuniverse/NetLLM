@@ -1,0 +1,117 @@
+{
+  "audit_time_utc": "2026-07-26",
+  "upstream_commit": "105bcf070f2bec808f7b14f8f5a953de6e4e6e54",
+  "checkpoint_path": "/root/NetLLM-assets/checkpoints/try_llama2_7b",
+  "overall_classification": "D. structurally-incompatible",
+  "using_multimodal": {
+    "classification": "undetermined",
+    "confirmed_facts": [
+      "modules_except_plm contains index-1 projection tensors with shapes [4096,768] and [4096]",
+      "current Pipeline always creates embed_multimodal and always stores it in modules_except_plm",
+      "current run_plm optimizer includes embed_multimodal regardless of using_multimodal",
+      "checkpoint contains no explicit using_multimodal metadata"
+    ],
+    "inference": "multimodal projection presence alone cannot distinguish multimodal from non-multimodal training"
+  },
+  "modules_except_plm": {
+    "strict_load_expected": false,
+    "missing_expected_keys": [
+      "4.networking_head.0.weight",
+      "4.networking_head.0.bias"
+    ],
+    "unexpected_checkpoint_keys": [
+      "4.task_head.0.weight",
+      "4.task_head.0.bias"
+    ],
+    "shape_mismatches": [],
+    "matrix": [
+      {
+        "module": "LoRA q_proj/v_proj",
+        "checkpoint_keys": "base_model.model.model.layers.{0..31}.self_attn.{q_proj,v_proj}.lora_{A,B}.weight",
+        "upstream_expected": "PEFT 0.6.x adapter serialization for q_proj/v_proj",
+        "key_classification": "exact match through PEFT adapter loader",
+        "shape_status": "match",
+        "notes": "rank=32, alpha=32, dropout=0.05 and FEATURE_EXTRACTION match models/low_rank.py"
+      },
+      {
+        "module": "viewport Conv1d",
+        "checkpoint_keys": [
+          "3.0.weight",
+          "3.0.bias"
+        ],
+        "upstream_expected": [
+          "3.0.weight",
+          "3.0.bias"
+        ],
+        "key_classification": "exact match",
+        "shape_status": "match"
+      },
+      {
+        "module": "viewport projection",
+        "checkpoint_keys": [
+          "0.weight",
+          "0.bias"
+        ],
+        "upstream_expected": [
+          "0.weight",
+          "0.bias"
+        ],
+        "key_classification": "exact match",
+        "shape_status": "match"
+      },
+      {
+        "module": "LayerNorm",
+        "checkpoint_keys": [
+          "2.weight",
+          "2.bias"
+        ],
+        "upstream_expected": [
+          "2.weight",
+          "2.bias"
+        ],
+        "key_classification": "exact match",
+        "shape_status": "match"
+      },
+      {
+        "module": "networking head",
+        "checkpoint_keys": [
+          "4.task_head.0.weight",
+          "4.task_head.0.bias"
+        ],
+        "upstream_expected": [
+          "4.networking_head.0.weight",
+          "4.networking_head.0.bias"
+        ],
+        "key_classification": "renamed module mismatch",
+        "shape_status": "match",
+        "notes": "strict current upstream load fails; this is not prefix-only"
+      },
+      {
+        "module": "multimodal projection",
+        "checkpoint_keys": [
+          "1.weight",
+          "1.bias"
+        ],
+        "upstream_expected": [
+          "1.weight",
+          "1.bias"
+        ],
+        "key_classification": "exact match",
+        "shape_status": "match",
+        "notes": "presence does not prove runtime use"
+      },
+      {
+        "module": "image/feature modules",
+        "checkpoint_keys": [],
+        "upstream_expected": "external feature_dict*.pth loaded only when using_multimodal=True",
+        "key_classification": "not stored in checkpoint",
+        "shape_status": "not applicable"
+      }
+    ]
+  },
+  "gate_decision": {
+    "gate_4_allowed": false,
+    "gate_5_allowed": false,
+    "reason": "renamed networking-head keys are not exact-compatible or prefix-only-compatible"
+  }
+}

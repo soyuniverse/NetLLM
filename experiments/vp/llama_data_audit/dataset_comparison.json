@@ -1,0 +1,102 @@
+{
+  "audit_scope": {
+    "uploaded_root": "/root/NetLLM-assets/datasets/team_data/viewports/Jin2022",
+    "upstream_root": "/root/NetLLM-source/viewport_prediction/data/viewports/Jin2022",
+    "upstream_selection": "Git-tracked CSV files",
+    "comparison_method": "relative path plus SHA-256 content digest",
+    "read_only": true
+  },
+  "uploaded": {
+    "file_count": 2268,
+    "total_size_bytes": 27396178,
+    "relative_path_pattern": "video<N>/5Hz/simple_5Hz_user<N>.csv",
+    "video_coverage": {
+      "minimum": 1,
+      "maximum": 27,
+      "count": 27
+    },
+    "user_coverage": {
+      "minimum": 1,
+      "maximum": 84,
+      "count": 84
+    },
+    "frequency": "5Hz",
+    "csv_schema": {
+      "header": false,
+      "column_count": 4,
+      "semantics_from_upstream_loader": [
+        "timestamp",
+        "yaw",
+        "pitch",
+        "roll"
+      ]
+    },
+    "row_count": {
+      "minimum": 58,
+      "maximum": 300,
+      "mode": 300,
+      "files_at_mode": 2070
+    },
+    "aggregate_relative_path_content_sha256": "0bafeac36b8855d71e9a2af2659f3f7ce6978962fb7b9f421e24b5ad39e3c716"
+  },
+  "upstream": {
+    "file_count": 2268,
+    "git_tracked_file_count": 2268,
+    "total_size_bytes": 27396178,
+    "relative_path_pattern": "video<N>/5Hz/simple_5Hz_user<N>.csv",
+    "video_coverage": {
+      "minimum": 1,
+      "maximum": 27,
+      "count": 27
+    },
+    "user_coverage": {
+      "minimum": 1,
+      "maximum": 84,
+      "count": 84
+    },
+    "frequency": "5Hz",
+    "csv_schema": {
+      "header": false,
+      "column_count": 4,
+      "semantics_from_upstream_loader": [
+        "timestamp",
+        "yaw",
+        "pitch",
+        "roll"
+      ]
+    },
+    "row_count": {
+      "minimum": 58,
+      "maximum": 300,
+      "mode": 300,
+      "files_at_mode": 2070
+    },
+    "aggregate_relative_path_content_sha256": "0bafeac36b8855d71e9a2af2659f3f7ce6978962fb7b9f421e24b5ad39e3c716"
+  },
+  "representative_file": {
+    "relative_path": "video1/5Hz/simple_5Hz_user1.csv",
+    "row_count": 300,
+    "column_count": 4,
+    "first_row": [
+      "0.000000",
+      "4.635097",
+      "9.926961",
+      "153.601913"
+    ],
+    "sha256": "ebc3b7ff3eb81ddd659ec3e44ace567099c3ecfd02de24caf3eedbbc9308e58d"
+  },
+  "comparison": {
+    "relative_path_overlap": 2268,
+    "identical_content_count": 2268,
+    "conflicting_content_count": 0,
+    "uploaded_only_count": 0,
+    "upstream_only_count": 0,
+    "relationship": "byte-identical mirror for the Jin2022 cooked CSV scope"
+  },
+  "usage_policy": {
+    "merged": false,
+    "uploaded_csv_approved_for_baseline": false,
+    "upstream_git_tracked_csv_preferred_for_non_multimodal_smoke": true,
+    "smoke_blocked_by_checkpoint_structure": true
+  }
+}

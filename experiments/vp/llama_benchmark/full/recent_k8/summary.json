@@ -1,0 +1,23 @@
+{
+  "model": "Llama-2-7b-hf NetLLM recovered artifact",
+  "source_commit": "ee4d8726898610e4ae7df08bdd26728cafb4701f",
+  "checkpoint": "/root/NetLLM-assets/checkpoints/try_llama2_7b",
+  "selector": "recent_k8",
+  "selected_tokens": 8,
+  "keep_ratio": 0.8,
+  "mae": 12.53157645249114,
+  "upstream_rmse": 35.69449789289539,
+  "corrected_rmse": 26.50924115567185,
+  "mean_angular_error": 12.53157645249114,
+  "evaluation_loss": 0.04114721962925402,
+  "latency_median_ms": 612.1804530266672,
+  "latency_p95_ms": 624.3104075780138,
+  "selector_latency_median_ms": 0.05632000043988228,
+  "peak_allocated_mib": 12993.9384765625,
+  "peak_reserved_mib": 13086.0,
+  "plm_forward_count": 33960,
+  "processed_sequence_length_sum": 594300,
+  "sample_count": 1698,
+  "comparative_quality_valid": true,
+  "paper_reproduction_valid": false
+}

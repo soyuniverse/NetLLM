@@ -1,0 +1,3 @@
+success=true
+partial=false
+elapsed_seconds=494.5657521439716

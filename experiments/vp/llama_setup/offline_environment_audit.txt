@@ -1,0 +1,49 @@
+audit_time_utc=2026-07-26
+hostname=29d90f362497
+pwd=/root/NetLLM
+hf_executable=/root/.local/bin/hf
+hf_version=1.24.0
+python_executable=/opt/conda/bin/python
+python_version=3.10.13
+
+[current_shell]
+HF_HUB_OFFLINE=unset
+TRANSFORMERS_OFFLINE=unset
+HF_DATASETS_OFFLINE=unset
+
+[saved_auth]
+/root/.cache/huggingface/token=exists
+/root/.cache/huggingface/stored_tokens=exists
+/root/.huggingface/token=missing
+token_value_recorded=no
+
+[startup_files]
+/root/.bashrc=offline_variables_not_found
+/root/.profile=offline_variables_not_found
+/etc/environment=offline_variables_not_found
+
+[failed_run]
+log=/root/NetLLM-assets/logs/setup_llama_20260726_101522.log
+failed_line=249
+failed_command=hf auth whoami
+error=offline mode is enabled
+failure_environment_directly_available=no
+
+[setup_script]
+/root/NetLLM/setup_netllm_llama.sh=does_not_set_offline_before_auth
+/root/NetLLM/setup_netllm_llama.sh:545-546=sets_offline_only_for_local_smoke_subprocess
+/root/NetLLM/scripts/setup_netllm_llama.sh=does_not_set_offline_before_auth
+/root/NetLLM/scripts/setup_netllm_llama.sh:545-546=sets_offline_only_for_local_smoke_subprocess
+
+[gpt2_scoped_offline]
+scripts/experiment_phase/phase2a/smoke_load_phase2a_gpt2.py=local_only
+scripts/experiment_phase/phase2b/run_phase2b_vp_forward.sh=local_only
+scripts/experiment_phase/phase3a/run_phase3a_identity_equivalence.py=local_only
+scripts/experiment_phase/phase3a/run_phase3a_identity_equivalence.sh=local_only
+
+[conclusion]
+cause=failed setup process inherited a transient offline environment
+persistent_startup_cause=no
+setup_auth_order_cause=no
+gpt2_local_only_policy_cause=no
+mitigation=invoke setup through env -u wrapper

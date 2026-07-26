@@ -1,0 +1,128 @@
+{
+  "safe_load": {
+    "map_location": "cpu",
+    "top_level_type": "OrderedDict",
+    "weights_only": true
+  },
+  "source": "/root/NetLLM-assets/checkpoints/try_llama2_7b/modules_except_plm.bin",
+  "source_sha256": "49c9473cd186b53eff929a03caec016e95f4d4795d710ffdfd920d08575ffb39",
+  "state_dict": {
+    "dtype_tensor_counts": {
+      "torch.float32": 10
+    },
+    "key_count": 10,
+    "optimizer_state_present": false,
+    "parameter_count": 4224003,
+    "prefix_categories": {
+      "conv1d": [
+        "3.0.weight",
+        "3.0.bias"
+      ],
+      "embed_ln": [
+        "2.weight",
+        "2.bias"
+      ],
+      "embed_multimodal": [
+        "1.weight",
+        "1.bias"
+      ],
+      "embed_vp": [
+        "0.weight",
+        "0.bias"
+      ],
+      "networking_head": [
+        "4.task_head.0.weight",
+        "4.task_head.0.bias"
+      ]
+    },
+    "scheduler_state_present": false,
+    "tensor_count": 10,
+    "tensors": [
+      {
+        "dtype": "torch.float32",
+        "key": "0.weight",
+        "numel": 1048576,
+        "shape": [
+          4096,
+          256
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "0.bias",
+        "numel": 4096,
+        "shape": [
+          4096
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "1.weight",
+        "numel": 3145728,
+        "shape": [
+          4096,
+          768
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "1.bias",
+        "numel": 4096,
+        "shape": [
+          4096
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "2.weight",
+        "numel": 4096,
+        "shape": [
+          4096
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "2.bias",
+        "numel": 4096,
+        "shape": [
+          4096
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "3.0.weight",
+        "numel": 768,
+        "shape": [
+          256,
+          1,
+          3
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "3.0.bias",
+        "numel": 256,
+        "shape": [
+          256
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "4.task_head.0.weight",
+        "numel": 12288,
+        "shape": [
+          3,
+          4096
+        ]
+      },
+      {
+        "dtype": "torch.float32",
+        "key": "4.task_head.0.bias",
+        "numel": 3,
+        "shape": [
+          3
+        ]
+      }
+    ]
+  }
+}

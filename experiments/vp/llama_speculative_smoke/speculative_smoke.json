@@ -1,0 +1,67 @@
+{
+  "prototype": "Continuous VP Draft-and-Verify Prototype",
+  "success": true,
+  "dataset": "Jin2022",
+  "sample_index": 0,
+  "sample_identity": {
+    "video": 4,
+    "user": 83,
+    "timestep": 30
+  },
+  "history_shape": [
+    1,
+    10,
+    3
+  ],
+  "future_shape": [
+    1,
+    20,
+    3
+  ],
+  "output_shape": [
+    1,
+    20,
+    3
+  ],
+  "finite": true,
+  "threshold_normalized_max_abs": 0.1,
+  "accepted_prefix_length": 8,
+  "first_rejected_index": 8,
+  "per_step_max_absolute_error": [
+    0.091796875,
+    0.0478515625,
+    0.03948974609375,
+    0.041259765625,
+    0.0426025390625,
+    0.05078125,
+    0.076171875,
+    0.099609375,
+    0.12109375,
+    0.142578125,
+    0.166015625,
+    0.18798828125,
+    0.20849609375,
+    0.22802734375,
+    0.2490234375,
+    0.27099609375,
+    0.29150390625,
+    0.310546875,
+    0.3291015625,
+    0.34765625
+  ],
+  "draft": "deterministic recent-velocity extrapolation",
+  "draft_forward_count": 1,
+  "target_forward_count": 20,
+  "baseline_target_forward_count": 20,
+  "model_load_latency_seconds": 4.085787010844797,
+  "baseline_target_latency_ms": 616.881191264838,
+  "prototype_latency_ms": 629.0453663095832,
+  "latency_ratio_baseline_over_prototype": 0.9806624836677381,
+  "peak_allocated_mib": 12996.03125,
+  "peak_reserved_mib": 13086.0,
+  "control_flow_valid": true,
+  "speedup_claim_valid": false,
+  "quality_claim_valid": false,
+  "technical_smoke_only": true,
+  "target_block_verification_optimized": false
+}

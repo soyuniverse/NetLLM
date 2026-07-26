@@ -1,0 +1,36 @@
+{
+  "source_commit": "ee4d8726898610e4ae7df08bdd26728cafb4701f",
+  "pipeline": "models.old.pipeline.EmbeddingModelViewportPrediction",
+  "batch_size": 1,
+  "history_input_shape": ["B", 10, 3],
+  "history_embedding": {
+    "per_timestep": "Conv1d(1,256,kernel=3) -> LeakyReLU -> Flatten -> Linear(256,4096)",
+    "sequence_shape_before_layernorm": [1, 10, 4096],
+    "layernorm": "applied once to the complete initial history sequence"
+  },
+  "selector_insertion": {
+    "position": "after initial-history LayerNorm and before the first PLM forward",
+    "calls": 1,
+    "feedback_selection": false,
+    "attention_mask": "rebuilt/matched to selected initial length"
+  },
+  "autoregressive": {
+    "iterations": 20,
+    "task_head": "LlamaTaskHeadModel2.forward -> SimpleLinearTaskHead",
+    "feedback": "task-head [1,1,3] -> original Conv1d/Linear -> append [1,1,4096]",
+    "feedback_layernorm": false,
+    "final_feedback_computed_but_unused": true,
+    "attention_mask": "all ones, current full sequence length",
+    "past_key_values_passed": false,
+    "cache_reused": false
+  },
+  "output_shape": [1, 20, 3],
+  "loss": "torch.nn.MSELoss over normalized prediction and normalized future",
+  "normalization": [180.0, 90.0, 180.0],
+  "evaluation": {
+    "upstream_mae": "mean absolute coordinate error; rotation=True supported",
+    "upstream_rmse": "sqrt(mean squared coordinate error); source ignores rotation argument",
+    "corrected_rmse": "rotation-aware coordinate RMSE",
+    "mean_angular_error": "mean rotation-aware coordinate error"
+  }
+}

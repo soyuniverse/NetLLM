@@ -1,0 +1,13 @@
+{
+  "success": false,
+  "failed_stage": "post_validation",
+  "error_type": "AssertionError",
+  "error": "",
+  "elapsed_seconds": 6.278699460905045,
+  "cuda_peak_allocated_bytes": 13694433792,
+  "cuda_peak_reserved_bytes": 13725859840,
+  "module_checkpoint_sha256_before": "49c9473cd186b53eff929a03caec016e95f4d4795d710ffdfd920d08575ffb39",
+  "module_checkpoint_sha256_after": "49c9473cd186b53eff929a03caec016e95f4d4795d710ffdfd920d08575ffb39",
+  "adapter_checkpoint_sha256_before": "8ae9c330971240cd276fbfe66f93281ded4166df72cb87aae12697e56896e63d",
+  "adapter_checkpoint_sha256_after": "8ae9c330971240cd276fbfe66f93281ded4166df72cb87aae12697e56896e63d"
+}

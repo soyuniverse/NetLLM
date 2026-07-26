@@ -1,0 +1,87 @@
+{
+  "checkpoint_source": "/root/NetLLM-assets/checkpoints/try_llama2_7b/modules_except_plm.bin",
+  "checkpoint_source_sha256": "49c9473cd186b53eff929a03caec016e95f4d4795d710ffdfd920d08575ffb39",
+  "current_upstream": {
+    "path": "/root/NetLLM-source",
+    "commit": "105bcf070f2bec808f7b14f8f5a953de6e4e6e54"
+  },
+  "checkpoint_era_source": {
+    "path": "/root/NetLLM-source-checkpoint-era",
+    "commit": "ee4d8726898610e4ae7df08bdd26728cafb4701f"
+  },
+  "keys": [
+    {
+      "checkpoint_key": "0.weight",
+      "shape": [4096, 256],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "0.bias",
+      "shape": [4096],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "1.weight",
+      "shape": [4096, 768],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "1.bias",
+      "shape": [4096],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "2.weight",
+      "shape": [4096],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "2.bias",
+      "shape": [4096],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "3.0.weight",
+      "shape": [256, 1, 3],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "3.0.bias",
+      "shape": [256],
+      "current_upstream": "exact name and shape",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "4.task_head.0.weight",
+      "shape": [3, 4096],
+      "current_upstream": "renamed name, identical shape: expected 4.networking_head.0.weight",
+      "checkpoint_era": "exact name and shape"
+    },
+    {
+      "checkpoint_key": "4.task_head.0.bias",
+      "shape": [3],
+      "current_upstream": "renamed name, identical shape: expected 4.networking_head.0.bias",
+      "checkpoint_era": "exact name and shape"
+    }
+  ],
+  "summary": {
+    "checkpoint_key_count": 10,
+    "current_exact_count": 8,
+    "current_renamed_count": 2,
+    "checkpoint_era_exact_count": 10,
+    "checkpoint_era_missing_count": 0,
+    "checkpoint_era_unexpected_count": 0,
+    "shape_mismatch_count": 0,
+    "additional_structural_mismatch": false,
+    "reclassification": "A. exact checkpoint-era compatible",
+    "native_loader": "checkpoint-era run_old.py strict state-dict loader",
+    "external_migration_loader_required": false
+  }
+}

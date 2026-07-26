@@ -1,0 +1,54 @@
+{
+  "policy": "canonical regular files with compatibility symlinks",
+  "content_modified": false,
+  "files_moved": 6,
+  "files_deleted": 0,
+  "files_overwritten": 0,
+  "external_assets_moved": 0,
+  "upstream_trees_moved": 0,
+  "checksum_equality": true,
+  "moves": [
+    {
+      "source": "NETLLM_LLAMA_재설치_매뉴얼.md",
+      "destination": "docs/final/manuals/NETLLM_LLAMA_재설치_매뉴얼.md",
+      "sha256_before": "e84da5426fd20c59622523229f26e17af6a946e3156d9e3073e7ebda6671659e",
+      "sha256_after": "e84da5426fd20c59622523229f26e17af6a946e3156d9e3073e7ebda6671659e",
+      "compatibility_symlink": "NETLLM_LLAMA_재설치_매뉴얼.md"
+    },
+    {
+      "source": "netllm_rebuild_manual.md",
+      "destination": "docs/final/manuals/netllm_rebuild_manual.md",
+      "sha256_before": "1656f3e38b33c7a49378e7c516b06c85b3ac8be2ab3ba7e4eba88cdb148df4ed",
+      "sha256_after": "1656f3e38b33c7a49378e7c516b06c85b3ac8be2ab3ba7e4eba88cdb148df4ed",
+      "compatibility_symlink": "netllm_rebuild_manual.md"
+    },
+    {
+      "source": "setup_netllm_llama.sh",
+      "destination": "scripts/experiment_phase/llama/setup/setup_netllm_llama.sh",
+      "sha256_before": "c975e8d82dc373a9cc274bf9d5a3a7810961886a8d32197eac1be9ab12d5596b",
+      "sha256_after": "c975e8d82dc373a9cc274bf9d5a3a7810961886a8d32197eac1be9ab12d5596b",
+      "compatibility_symlink": "setup_netllm_llama.sh"
+    },
+    {
+      "source": "scripts/setup_netllm_llama.sh",
+      "destination": "scripts/experiment_phase/llama/setup/legacy/setup_netllm_llama_uploaded_copy.sh",
+      "sha256_before": "560401e82949e14d9415975fa2892c7dd4def300c04cab4d524dc2d451272e38",
+      "sha256_after": "560401e82949e14d9415975fa2892c7dd4def300c04cab4d524dc2d451272e38",
+      "compatibility_symlink": "scripts/setup_netllm_llama.sh"
+    },
+    {
+      "source": "scripts/setup_netllm_llama.sh.empty",
+      "destination": "scripts/experiment_phase/llama/setup/legacy/setup_netllm_llama.sh.empty",
+      "sha256_before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256_after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compatibility_symlink": "scripts/setup_netllm_llama.sh.empty"
+    },
+    {
+      "source": "setup_netllm_repro_master.sh",
+      "destination": "scripts/experiment_phase/llama/setup/setup_netllm_repro_master.sh",
+      "sha256_before": "b44938e54cd6c44b8cf78604516c0a920eed559bd1b272b267768f73c6260833",
+      "sha256_after": "b44938e54cd6c44b8cf78604516c0a920eed559bd1b272b267768f73c6260833",
+      "compatibility_symlink": "setup_netllm_repro_master.sh"
+    }
+  ]
+}

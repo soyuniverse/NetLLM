@@ -1,0 +1,67 @@
+{
+  "audit_date_utc": "2026-07-26",
+  "search_scope": {
+    "project": "/root/NetLLM",
+    "current_upstream": "/root/NetLLM-source",
+    "local_refs": [
+      "branches",
+      "remote-tracking branches",
+      "tags",
+      "reflogs",
+      "all reachable commits"
+    ],
+    "other_sources": [
+      "uploaded checkpoint archive metadata",
+      "adapter metadata",
+      "checkpoint timestamps",
+      "training/setup/manual documents"
+    ],
+    "remote_fetch_performed": false,
+    "reason_remote_fetch_not_needed": "the authoritative upstream history already contains the checkpoint-specific source and invocation"
+  },
+  "selected_source": {
+    "repository_url": "https://github.com/duowuyms/NetLLM.git",
+    "branch_or_tag": "historical commit reachable from master; no dedicated tag",
+    "commit": "ee4d8726898610e4ae7df08bdd26728cafb4701f",
+    "commit_date": "2024-07-30T23:01:55+08:00",
+    "subject": "finish vp",
+    "detached_clone": "/root/NetLLM-source-checkpoint-era",
+    "source_role": "exact checkpoint-era implementation",
+    "evidence": [
+      "viewport_prediction/README.md identifies try_llama2_7b and requires run_old.py",
+      "models/old/llama.py states that task_head is the networking head",
+      "models/old/pipeline.py stores plm.task_head as modules_except_plm index 4",
+      "run_old.py saves and strictly loads modules_except_plm.bin",
+      "the official checkpoint command uses rank 32 and no --multimodal flag"
+    ],
+    "relevant_blobs": {
+      "viewport_prediction/run_old.py": "fa87496f256eb6bf534a043d2e96d8a9e31f6a77",
+      "viewport_prediction/models/old/pipeline.py": "75054a634b3033edc7e76b9a44743edc50e52b55",
+      "viewport_prediction/models/old/llama.py": "28bcc1065101bf6c2e8cbf4e8ab11ce1e750cac9",
+      "viewport_prediction/models/old/networking_head.py": "8685bedec4fefdfc44f2d84209b63bb3a4a6fad6",
+      "viewport_prediction/models/old/plms_utils.py": "439f22ae0bd960e7deebfd0cc9703cd6d248c0dc",
+      "viewport_prediction/models/low_rank.py": "0efc44f24f9d36ddc6b5c3ee638cbb3a857e6419"
+    }
+  },
+  "other_candidates": [
+    {
+      "commit": "105bcf070f2bec808f7b14f8f5a953de6e4e6e54",
+      "classification": "archival_copy_of_exact_old_source",
+      "notes": "the six selected source blobs are byte-identical Git objects, but the detached historical commit is retained for provenance"
+    },
+    {
+      "commit": "d821f1a9fed38b2400e13a228e8f634f890954bc",
+      "repository": "/root/NetLLM",
+      "classification": "not_checkpoint_source",
+      "notes": "search hit is documentation/audit material rather than the old model implementation"
+    }
+  ],
+  "checkpoint_metadata": {
+    "archive_name": "try_llama2_7b.zip",
+    "archive_entry_timestamp": "2026-07-16 01:27",
+    "archive_contains_source": false,
+    "base_model_name_or_path": "/data/data1/wuduo/2023_prompt_learning/downloaded_plms/llama/base",
+    "adapter_revision": null,
+    "model_card_framework": "PEFT 0.6.0"
+  }
+}
