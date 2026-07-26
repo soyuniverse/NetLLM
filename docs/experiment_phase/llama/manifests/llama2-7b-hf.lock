@@ -1,0 +1,6 @@
+asset_role=llama2_base
+model_id=meta-llama/Llama-2-7b-hf
+revision=01c7f73d771dfac7d292323805ebc428287df4f9
+weight_format=safetensors
+tokenizer_file=tokenizer.model
+config_file=config.json
