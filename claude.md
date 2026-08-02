@@ -30,10 +30,14 @@ NetLLM(SIGCOMM'24)의 Viewport Prediction(VP) 파이프라인에 LiteVLM(NVIDIA)
   - transformers/peft 미설치 상태였음 → transformers==4.34.1, peft==0.6.2,
     accelerate==0.24.1 재설치 완료 (torch는 기존 2.2.0 유지, pip check 통과).
   - transformers 4.34.1은 legacy tuple 기반 past_key_values 사용
-    (`transformers.cache_utils` 모듈 자체가 없음). 실측 결과 incremental
-    cache 디코딩과 full recompute가 fp16/GPU에서도 torch.equal 수준으로
-    완전히 동일 — block verification의 threshold=0 정합성 게이트가
-    설계상 성립함을 확인.
+    (`transformers.cache_utils` 모듈 자체가 없음). 단일 KV cache 연장 1회는
+    fp32/fp16 모두에서 torch.equal 수준으로 완전히 동일하지만, 이 파이프라인처럼
+    여러 hop을 체인으로 연결하면 shape에 따른 matmul reduction 순서 차이로
+    미세한 부동소수점 오차가 재등장함을 실측으로 확인 (fp32 CPU ~1e-7, fp16 GPU
+    ~1e-3; torch.use_deterministic_algorithms(True)로도 사라지지 않음 — BLAS의
+    고유 특성, 로직 결함 아님). threshold=0 정합성 게이트는 "부동소수점 정밀도
+    한계 내 동일"(atol=1e-5 fp32 / atol=2e-3 fp16)으로 성립 — 자세한 진단은
+    docs/experiment_phase/speculative/PHASE_A_DESIGN.md 참고.
   - **VP fine-tuned checkpoint(LoRA adapter + modules_except_plm.bin)와
     Jin2022 데이터셋이 파일시스템 전체에서 발견되지 않음** (NetLLM-assets/checkpoints,
     NetLLM-assets/datasets 모두 비어있음; staging 포함 전수 검색 완료).

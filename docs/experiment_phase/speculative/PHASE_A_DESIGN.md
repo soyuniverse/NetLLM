@@ -94,12 +94,32 @@ draft_0, ..., draft_{gamma-1}]`.
   `transformers.cache_utils` does not exist at this version — `LlamaModel`
   returns the **legacy tuple-of-tuples** format: `tuple[num_layers]` of
   `(key, value)`, each `[B, num_heads, seq_len, head_dim]`. Rollback is a
-  plain per-layer slice on `dim=2`. Verified empirically (fp32/CPU and
-  fp16/GPU, real `LlamaModel`) that incremental cached decoding is
-  **bit-exact** (`torch.equal=True`) versus full-sequence recompute — there
-  is no fused-attention kernel in this version to introduce reduction-order
-  drift, so the threshold=0 exactness gate is achievable by construction,
-  not just approximately.
+  plain per-layer slice on `dim=2` (`.contiguous()`d — the raw slice keeps
+  the pre-truncation stride, an otherwise needless non-contiguous tensor
+  handed to the next forward call).
+
+  **Bit-exactness holds per single hop, not across a chained loop.** A
+  single KV-cache extension (one forward reusing a cache from one prior
+  forward) is bit-exact (`torch.equal=True`) versus full-sequence recompute,
+  measured in both fp32/CPU and fp16/GPU — there is no fused-attention
+  kernel in this transformers version to introduce reduction-order drift
+  for an isolated comparison. But this pipeline chains many such hops in a
+  loop (each iteration's cache is a rolled-back slice of the previous
+  iteration's cache), and a controlled diagnostic (repeatedly extending a
+  real 2-layer `LlamaModel`'s cache by one token at a time, comparing each
+  step's hidden state against an independent full recompute at that length)
+  shows small drift reappearing intermittently across hops: ~1e-8..1e-7
+  absolute (fp32/CPU), ~1e-3 (fp16/GPU) — unaffected by
+  `torch.use_deterministic_algorithms(True)`. This is shape-dependent
+  floating-point reassociation in the underlying matmul/attention kernels
+  (a length-1 batch and a length-2 batch are not guaranteed to sum a
+  causally-masked position's own attention terms in the same order, even
+  though causal masking guarantees they read the same logical keys/values)
+  — a well-known, inherent property of BLAS-backed transformer inference,
+  not a control-flow defect. The threshold=0 gate therefore targets
+  "identical up to floating-point precision" (`atol=1e-5` fp32, `atol=2e-3`
+  fp16 — both far tighter than the fp16 tolerances `torch.testing` itself
+  defaults to), not literal bit-equality.
 - **Per-iteration forward.** Embed `[carry, draft_0..draft_{g-1}]`
   (`g = min(gamma, remaining_steps)`) via the same `conv1d1`/`linear_layer`
   path as baseline feedback (no LayerNorm). One call:
@@ -138,9 +158,11 @@ draft_0, ..., draft_{gamma-1}]`.
   baseline forward-for-forward — `1` (initial warmup) + `19` (iterations)
   `= 20` target forwards, and because causal masking makes `preds[0]`
   independent of the (wasted) draft positions appended after it in the same
-  batched call, the accepted value is bit-identical to what baseline would
-  have produced at that step. This is what makes the threshold=0 gate
-  achievable by construction rather than by luck.
+  batched call, the accepted value matches what baseline would have
+  produced at that step up to the floating-point-reassociation floor
+  described above (not exactly bit-for-bit — see the KV cache paragraph).
+  This is what makes the threshold=0 gate achievable by construction to
+  that floor, rather than by luck.
 - **Counters.** `target_forward_count` (real `old.plm` calls),
   `draft_forward_count` (always `0` — drafting is pure tensor
   arithmetic), `accepted_per_iteration` (list of `j` per iteration) are
