@@ -145,6 +145,57 @@ model, a selection policy, and a learned-attention alternative to that
 policy), which is why this is reported as a real finding about this task
 rather than a single noisy measurement.
 
+### Tail analysis — where the 47% degradation concentrates, and why
+
+Full analysis: `docs/experiment_phase/analysis/TAIL_ANALYSIS.md`.
+
+The hypothesis tested was "degradation concentrates in abrupt-motion
+segments (inertia assumption breaks down)" — **partially supported, with
+an important correction, not a clean accept/reject.** The top-5%-worst
+samples have 2.16x higher mean history motion speed than the rest
+(Mann-Whitney p=3.0e-24) — the worst cases *are* concentrated in
+higher-motion segments. But the population-wide Spearman correlation
+between motion speed and MAE diff is **negative** (rho=−0.400,
+p=2.8e-66): higher motion speed more often means *improvement*, not
+degradation. The real pattern is a fan-shaped spread — high-velocity
+samples have far greater outcome variance in both directions, and the
+worst-case tail is drawn from that high-variance regime, not from "high
+speed" as a simple monotonic predictor.
+
+![Motion speed vs. degradation](../../results/speculative/consolidated/tail_velocity_vs_diff.png)
+
+Attribution is unambiguous: **100% of the top-5% degraded samples**
+have the RecentK-2 selector's own effect dominate over speculative
+decoding's incremental contribution, which is often slightly *negative*
+(partially offsetting rather than compounding the selector's error).
+`target_forward_count` has essentially zero correlation with accuracy
+change (rho=−0.003, not significant) — forward-count reduction and
+accuracy are independent, consistent with the additive-composition
+finding above. A video-level check ruled out any single test video
+dominating the tail.
+
+### Generalization spot-check — Wu2017 (unseen during Jin2022 fine-tuning)
+
+Full output: `experiments/vp/wu2017_generalization_spotcheck/spotcheck_result.json`.
+Wu2017 was found already present (extracted alongside Jin2022 from the
+recovered `data.zip`), format-compatible with the existing dataset
+loading path. 200 evenly-spaced samples from its 1,395-sample test split
+(this checkpoint was fine-tuned on Jin2022, not Wu2017, so this measures
+distribution-shift robustness — the generalization-evaluation context
+NetLLM itself uses cross-dataset splits for — not an apples-to-apples
+number with the Jin2022 results above):
+
+| config | MAE | latency median | target forward avg |
+|---|---:|---:|---:|
+| A. baseline | 15.476 | 567.0 ms | 20.00 |
+| D. RecentK-2 + Speculative | 13.050 | 121.0 ms | 4.03 |
+
+**Both headline properties hold on unseen data**: MAE improves (in fact
+by a larger relative margin than on Jin2022) and latency drops by
+essentially the same ~4.7x factor. Spot-check scale (200/1,395 samples,
+not the full split) — reported as measured, not extended to a full run
+this session.
+
 ### The threshold=3.0 ceiling demo vs. the real calibrated sweep
 
 The earliest real-7B speculative smoke (`PHASE_B_7B_SMOKE.md`, random
@@ -201,23 +252,60 @@ reduction composes additively with an independent accuracy improvement,
 confirmed via paired per-sample decomposition rather than aggregate
 numbers alone; AttentionTopK is a worse selector than RecentK for this
 task, consistently across K and corroborated by two other independent
-pieces of evidence for recency-dominance.
+pieces of evidence for recency-dominance. The 47%-of-samples individual
+degradation under the combined config is now explained, not just
+flagged: it concentrates in a high-motion-variance regime (top-5%-worst
+samples have 2.16x the motion speed of the rest, p=3.0e-24) but is not
+simply "high motion is bad" (population-wide correlation is negative —
+most high-motion samples improve), and it is attributable to RecentK-2
+selection with no exceptions in the top-5% tail, not to speculative
+decoding. A 200-sample spot-check on Wu2017 (unseen during this
+checkpoint's Jin2022 fine-tuning) shows both the accuracy improvement and
+the latency reduction hold under distribution shift.
 
 **Not established**: general speedup claims independent of this exact
 setup (one RTX 4090, fp16, this checkpoint, this dataset); whether the
 RecentK-2 + speculative composition generalizes to other selector/
 threshold/gamma combinations beyond the two (D, D') tested at full
-scale; the 5 provenance items above, for anyone who needs a formal
-paper-reproduction claim rather than this controlled comparison.
+scale, or to Wu2017 at full scale (only spot-checked); the 5 provenance
+items above, for anyone who needs a formal paper-reproduction claim
+rather than this controlled comparison.
 
 ### Suggested next work
 
 1. Extend the combination ablation to more (selector, threshold, gamma)
    triples if a stronger Pareto frontier is needed than {A, B, C, D, D'}.
-2. Investigate why 47.1% of individual samples degrade under RecentK-2
-   despite the strong aggregate improvement — likely tied to the same
-   fast-motion/complex-trajectory samples characterized in the draft-vs-
-   target disagreement measurement (Task 1, `PHASE_B_REAL_RESULTS.md`
-   §1) — could inform a hybrid or adaptive-K selector.
-3. If a paper-reproduction claim is ever needed, resolve the 5 items
+2. ~~Investigate why 47.1% of individual samples degrade under
+   RecentK-2~~ — answered this session
+   (`docs/experiment_phase/analysis/TAIL_ANALYSIS.md`): a high-motion-
+   variance regime, attributable to the selector. Open follow-up: could
+   an adaptive-K selector (widen K specifically when recent motion
+   variance is high) recover the tail without giving up the K=2 gain
+   elsewhere?
+3. Run the Wu2017 generalization check at full scale (1,395 samples)
+   rather than the 200-sample spot-check, if a stronger generalization
+   claim is needed.
+4. If a paper-reproduction claim is ever needed, resolve the 5 items
    above; none of them are addressable from this instance alone.
+
+## 6. Presentation insertion guide
+
+All 7 figures live in `results/speculative/consolidated/` (also copied
+to `results/final_20260802/` for the 5 core ones — the 2 tail-analysis
+figures are analysis-appendix material, not part of that handoff copy).
+Suggested flow, core 3 first:
+
+| order | figure | flow position | why here |
+|---|---|---|---|
+| 1 (core) | `ablation_bars.png` | Opening result slide, right after stating the headline claim | Single figure showing config D matches B's MAE *and* C's latency simultaneously — the entire finding in one look |
+| 2 (core) | `mae_latency_tradeoff.png` | Immediately after, as the "how we got there" slide | Shows the full swept threshold/gamma grid forms a real Pareto frontier, not just the one selected point |
+| 3 (core) | `mae_cdf.png` | Right after, as the "is this robust across samples, not just on average" slide | Directly motivates the paired/tail analysis that follows — visually shows baseline≈speculative and RecentK-2≈combined as two curve pairs |
+| 4 (appendix) | `threshold_vs_forward_count.png` | Appendix: "how we chose the threshold" | Supports the threshold-calibration methodology claim if asked |
+| 5 (appendix) | `threshold_vs_mae.png` | Appendix, next to the above | Same purpose, accuracy side |
+| 6 (appendix) | `tail_velocity_vs_diff.png` | Appendix: "what about the 47%" | Only needed if asked about the per-sample degradation fraction; the fan-shaped spread is the key visual |
+| 7 (appendix) | `tail_acceptrate_vs_diff.png` | Appendix, next to the above | Weaker/secondary finding (rho=0.168); include only for completeness if presenting the full correlation table |
+
+If time is short, 1-3 alone (ablation bars → tradeoff → CDF) tell the
+complete headline story: what was achieved, that it's a real frontier
+not a cherry-picked point, and that it holds up at the per-sample level
+— matching the order this document itself builds the argument in.
