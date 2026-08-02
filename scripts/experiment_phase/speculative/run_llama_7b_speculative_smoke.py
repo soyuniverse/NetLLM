@@ -79,16 +79,8 @@ def main():
     if result_path.exists():
         raise RuntimeError(f"refusing to overwrite existing result: {result_path}")
 
-    # Falls back to the repo root if the weights haven't been relocated to
-    # DEFAULT_BASE_MODEL_PATH yet (see docs/REPO_LAYOUT.md).
-    base_model_path = (
-        DEFAULT_BASE_MODEL_PATH
-        if DEFAULT_BASE_MODEL_PATH.exists()
-        else PROJECT_ROOT
-    )
     load_started = time.perf_counter()
     model, checkpoint_loaded = load_checkpoint_era_model(
-        base_model_path=base_model_path,
         device=DEVICE, dtype=DTYPE, rank=32, fut_window=FUT_WINDOW,
         checkpoint_path=None, seed=0,
     )

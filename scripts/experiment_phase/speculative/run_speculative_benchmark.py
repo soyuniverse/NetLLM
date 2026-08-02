@@ -266,8 +266,7 @@ def main() -> int:
 
     torch.manual_seed(args.seed)
     model, checkpoint_loaded = load_checkpoint_era_model(
-        base_model_path=args.base_model_path
-        or (DEFAULT_BASE_MODEL_PATH if DEFAULT_BASE_MODEL_PATH.exists() else PROJECT_ROOT),
+        base_model_path=args.base_model_path or DEFAULT_BASE_MODEL_PATH,
         device=device,
         dtype=dtype,
         rank=32,
