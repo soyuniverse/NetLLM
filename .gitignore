@@ -16,6 +16,9 @@ logs/
 research_logs/
 *.log
 *.tgz
+*.tar.gz
+*.tar
+*.zip
 
 # NetLLM generated outputs
 NetLLM/viewport_prediction/logs/
