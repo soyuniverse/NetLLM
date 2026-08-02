@@ -1,0 +1,69 @@
+{
+  "accuracy_degradation_tolerance": 0.05,
+  "accuracy_preserved_criterion": "mae <= baseline_mae * (1 + 0.05)",
+  "baseline": {
+    "accepted_per_iteration_avg": null,
+    "accuracy_preserved": true,
+    "config": "baseline_selector=recent_k:2",
+    "corrected_rmse": 22.486722208730615,
+    "gamma": null,
+    "latency_median_ms": 622.9520128108561,
+    "mae": 10.84686681689948,
+    "metric_valid": true,
+    "num_samples": 1698,
+    "peak_allocated_mib": 12987.36279296875,
+    "peak_reserved_mib": 13086.0,
+    "speedup_claim_valid": false,
+    "target_forward_avg": 20.0,
+    "test_loss": null,
+    "threshold": null
+  },
+  "checkpoint_loaded": true,
+  "configs": [
+    {
+      "accepted_per_iteration_avg": 6.219784524975514,
+      "accuracy_preserved": true,
+      "config": "threshold=0.35_gamma=8_selector=recent_k:2",
+      "corrected_rmse": 22.54730367655577,
+      "gamma": 8,
+      "latency_median_ms": 122.2276664339006,
+      "mae": 10.895102344584037,
+      "metric_valid": true,
+      "num_samples": 1698,
+      "peak_allocated_mib": 12991.70654296875,
+      "peak_reserved_mib": 13086.0,
+      "speedup_claim_valid": true,
+      "target_forward_avg": 4.006478209658422,
+      "test_loss": null,
+      "threshold": 0.35
+    },
+    {
+      "accepted_per_iteration_avg": 6.303606428851431,
+      "accuracy_preserved": true,
+      "config": "threshold=0.7_gamma=8_selector=recent_k:2",
+      "corrected_rmse": 22.58030846315392,
+      "gamma": 8,
+      "latency_median_ms": 121.89886230044067,
+      "mae": 10.902755948342183,
+      "metric_valid": true,
+      "num_samples": 1698,
+      "peak_allocated_mib": 12992.0107421875,
+      "peak_reserved_mib": 13086.0,
+      "speedup_claim_valid": true,
+      "target_forward_avg": 4.004711425206125,
+      "test_loss": null,
+      "threshold": 0.7
+    }
+  ],
+  "dry_run": false,
+  "gammas": [
+    8
+  ],
+  "metric_available": true,
+  "num_samples": 1698,
+  "speedup_claim_criterion": "target_forward_avg < baseline AND latency_median_ms < baseline (both measured)",
+  "thresholds": [
+    0.35,
+    0.7
+  ]
+}
