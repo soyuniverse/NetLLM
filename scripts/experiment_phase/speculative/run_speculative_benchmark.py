@@ -39,6 +39,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from netllm_litevlm.evaluation.runtime_benchmark import benchmark_callable
 from netllm_litevlm.evaluation.vp_metrics import evaluate_vp_metrics
+from netllm_litevlm.selectors import BaseSelector, IdentitySelector, RecentKSelector
 from netllm_litevlm.speculative import SpeculativeBlockVerifyPipeline
 from netllm_litevlm.vp.checkpoint_era_runtime import (
     DEFAULT_BASE_MODEL_PATH,
@@ -48,6 +49,17 @@ from netllm_litevlm.vp.checkpoint_era_runtime import (
 from netllm_litevlm.vp.llama_old_selectable_pipeline import LlamaOldSelectablePipeline
 
 FUT_WINDOW = 20
+
+
+def _build_selector(spec: str) -> Optional[BaseSelector]:
+    """Parses --selector: "none" (default), "identity", or "recent_k:K"."""
+    if spec == "none":
+        return None
+    if spec == "identity":
+        return IdentitySelector()
+    if spec.startswith("recent_k:"):
+        return RecentKSelector(int(spec.split(":", 1)[1]))
+    raise ValueError(f"unsupported --selector spec: {spec!r}")
 HIS_WINDOW = 10
 
 # forward-count reduction AND latency reduction must both be measured for
@@ -273,6 +285,12 @@ def main() -> int:
     # that real range.
     parser.add_argument("--thresholds", type=str, default="0.05,0.1,0.2,0.35,0.7")
     parser.add_argument("--gammas", type=str, default="2,4,8")
+    parser.add_argument(
+        "--selector", type=str, default="none",
+        help='"none" (default), "identity", or "recent_k:K". Applied to '
+        "both the baseline pipeline and every speculative config in this "
+        "run -- construct separate runs to compare with/without a selector.",
+    )
     parser.add_argument("--num-samples", type=int, default=50)
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "results" / "speculative")
     parser.add_argument("--device", type=str, default="cuda:0")
@@ -309,6 +327,7 @@ def main() -> int:
 
     thresholds = [float(value) for value in args.thresholds.split(",") if value]
     gammas = [int(value) for value in args.gammas.split(",") if value]
+    selector = _build_selector(args.selector)
     dtype = torch.float16
     device = args.device
 
@@ -351,25 +370,26 @@ def main() -> int:
             writer.writerows(per_sample)
 
     rows: List[Dict[str, Any]] = []
+    selector_suffix = "" if args.selector == "none" else f"_selector={args.selector}"
 
-    baseline_pipeline = LlamaOldSelectablePipeline(model)
+    baseline_pipeline = LlamaOldSelectablePipeline(model, selector=selector)
     _reset_memory(device)
     baseline_run = _run_pipeline_over_samples(baseline_pipeline, samples, args.dry_run, device, dtype)
     baseline_run["device"] = device
-    baseline_row = _build_row("baseline", None, None, baseline_run, metric_available)
+    baseline_row = _build_row(f"baseline{selector_suffix}", None, None, baseline_run, metric_available)
     rows.append(baseline_row)
-    _write_per_sample_csv("baseline", baseline_run["per_sample"])
+    _write_per_sample_csv(f"baseline{selector_suffix}", baseline_run["per_sample"])
 
     configs = []
     for threshold in thresholds:
         for gamma in gammas:
             spec_pipeline = SpeculativeBlockVerifyPipeline(
-                model, gamma=gamma, acceptance_threshold=threshold
+                model, selector=selector, gamma=gamma, acceptance_threshold=threshold
             )
             _reset_memory(device)
             run = _run_pipeline_over_samples(spec_pipeline, samples, args.dry_run, device, dtype)
             run["device"] = device
-            config_name = f"threshold={threshold}_gamma={gamma}"
+            config_name = f"threshold={threshold}_gamma={gamma}{selector_suffix}"
             row = _build_row(config_name, threshold, gamma, run, metric_available)
             speedup_claim_valid = (
                 row["target_forward_avg"] < baseline_row["target_forward_avg"]
