@@ -1,0 +1,116 @@
+{
+  "scope": "structural/resource smoke only -- base Llama2-7b weights + PEFT-default-init LoRA(rank=32) + randomly-initialized SimpleLinearTaskHead, NOT the fine-tuned VP checkpoint",
+  "quality_claim_valid": false,
+  "speedup_claim_valid": false,
+  "checkpoint_loaded": false,
+  "base_model_path": "/root/llama2-7b-base",
+  "model_load_seconds": 3.5053040296770632,
+  "device": "cuda:0",
+  "dtype": "float16",
+  "fut_window": 20,
+  "num_samples": 5,
+  "gate_threshold_zero": {
+    "max_abs_diff_per_sample": [
+      0.0009765625,
+      0.0009765625,
+      0.0009765625,
+      0.001220703125,
+      0.0009765625
+    ],
+    "max_abs_diff": 0.001220703125,
+    "target_forward_count_per_sample": [
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "target_forward_count_matches_baseline": true,
+    "draft_forward_count": 0
+  },
+  "gate_threshold_large": {
+    "threshold": 3.0,
+    "target_forward_count_per_sample": [
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "reduced_vs_baseline": true,
+    "accepted_per_iteration_per_sample": [
+      [
+        3,
+        4,
+        4,
+        4,
+        3
+      ],
+      [
+        3,
+        4,
+        4,
+        4,
+        3
+      ],
+      [
+        3,
+        4,
+        4,
+        4,
+        3
+      ],
+      [
+        3,
+        4,
+        4,
+        4,
+        3
+      ],
+      [
+        3,
+        4,
+        4,
+        4,
+        3
+      ]
+    ],
+    "non_finite_output_observed": false,
+    "draft_forward_count": 0
+  },
+  "gamma_memory_sweep": {
+    "2": {
+      "gamma": 2,
+      "peak_allocated_mib": 13005.0849609375,
+      "peak_reserved_mib": 13042.0,
+      "target_forward_count": 11,
+      "oom": false,
+      "finite": true
+    },
+    "4": {
+      "gamma": 4,
+      "peak_allocated_mib": 12999.11376953125,
+      "peak_reserved_mib": 13042.0,
+      "target_forward_count": 6,
+      "oom": false,
+      "finite": true
+    },
+    "8": {
+      "gamma": 8,
+      "peak_allocated_mib": 12998.4326171875,
+      "peak_reserved_mib": 13042.0,
+      "target_forward_count": 4,
+      "oom": false,
+      "finite": true
+    }
+  },
+  "baseline_peak_memory": {
+    "peak_allocated_mib": 12996.11865234375,
+    "peak_reserved_mib": 13042.0
+  },
+  "latency_reference_ms_no_speedup_claim": {
+    "baseline_one_inference_ms": 570.5657969228923,
+    "speculative_gamma4_large_threshold_one_inference_ms": 179.5265730470419,
+    "speculative_target_forward_count": 6
+  }
+}
