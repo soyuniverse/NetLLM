@@ -1,0 +1,29 @@
+{
+  "accuracy_degradation_tolerance": 0.05,
+  "accuracy_preserved_criterion": "mae <= baseline_mae * (1 + 0.05)",
+  "baseline": {
+    "accepted_per_iteration_avg": null,
+    "accuracy_preserved": true,
+    "config": "baseline",
+    "corrected_rmse": 27.118723422261244,
+    "gamma": null,
+    "latency_median_ms": 571.6559984721243,
+    "mae": 12.798559396025476,
+    "metric_valid": true,
+    "num_samples": 1698,
+    "peak_allocated_mib": 12996.11669921875,
+    "peak_reserved_mib": 13086.0,
+    "speedup_claim_valid": false,
+    "target_forward_avg": 20.0,
+    "test_loss": null,
+    "threshold": null
+  },
+  "checkpoint_loaded": true,
+  "configs": [],
+  "dry_run": false,
+  "gammas": [],
+  "metric_available": true,
+  "num_samples": 1698,
+  "speedup_claim_criterion": "target_forward_avg < baseline AND latency_median_ms < baseline (both measured)",
+  "thresholds": []
+}
