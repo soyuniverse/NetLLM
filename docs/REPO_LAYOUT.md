@@ -7,14 +7,16 @@ established by an earlier reorganization pass
 (immutability of referenced paths, move policy, symlink-over-copy). This
 file is the current *map*, re-audited and refreshed as of 2026-08-02.
 
-**Audit finding (2026-08-02, re-run twice this day — asset recovery
-session then results/AttentionTopK session):** everything added in both
-passes already matches the canonical layout those rules define, or an
-explicitly user-instructed new path (`results/speculative/`,
-`tests/selectors/`, both noted below). No file needed to move either
-time. The one correction from the first pass (stray base-model files at
-the repo root, moved to `/root/llama2-7b-base/`) still stands; nothing
-new like it appeared in the second pass.
+**Audit finding (2026-08-02, re-run three times this day — asset
+recovery session, results/AttentionTopK session, then this
+Selector-x-Speculative-ablation + final-package session):** everything
+added in all three passes already matches the canonical layout those
+rules define, or an explicitly user-instructed new path
+(`results/speculative/`, `tests/selectors/`, `results/final_<date>/`,
+all noted below). No file needed to move in any pass. The one correction
+from the first pass (stray base-model files at the repo root, moved to
+`/root/llama2-7b-base/`) still stands; nothing new like it appeared in
+the second or third passes.
 
 ```text
 /root/NetLLM/                      this repository
@@ -30,6 +32,12 @@ docs/
   final/                           cross-phase conclusions, final manuals
     manuals/                       reinstall/rebuild manuals (root has
                                     compatibility symlinks to these)
+    FINAL_RESULTS_SUMMARY.md       the research narrative end-to-end,
+                                    condensing PHASE_B_REAL_RESULTS.md for
+                                    presentation (goal status ->
+                                    implementation -> verification ->
+                                    performance -> conclusion/next-work,
+                                    same structure as the 7.26 report)
   implementation/                  implementation explanations (how the
                                     wrapper code works, not phase evidence)
   experiment_phase/                phase-specific evidence, one dir per phase
@@ -37,8 +45,11 @@ docs/
     speculative/                   PHASE_A_DESIGN.md (block-verify design),
                                     PHASE_B_7B_SMOKE.md (random-head 7B
                                     structural smoke), PHASE_B_REAL_RESULTS.md
-                                    (real-checkpoint controlled comparison --
-                                    the headline deliverable)
+                                    (real-checkpoint controlled comparison,
+                                    including the Selector x Speculative
+                                    combination ablation and its paired
+                                    per-sample statistics -- the full
+                                    version of FINAL_RESULTS_SUMMARY.md)
     assets/                        ASSET_RECOVERY_VERIFICATION.md: RUNBOOK
                                     absence, zip-structure mismatches found
                                     and resolved, strict-load + dataset +
@@ -86,7 +97,14 @@ tests/
   phase3a/                         identity-selector equivalence tests
   speculative/                     acceptance.py, RecentVelocityDraft,
                                     ContinuousDraftVerify,
-                                    test_block_verify.py (gate tests)
+                                    test_block_verify.py (gate tests,
+                                    including Selector x
+                                    SpeculativeBlockVerifyPipeline
+                                    compatibility: draft-velocity
+                                    selector-independence, and
+                                    threshold=0 exactness parametrized
+                                    over RecentKSelector(k) for k in
+                                    {4,6,10})
   selectors/                       test_attention_topk.py -- CPU-only tiny
                                     real LlamaModel (GPU was occupied by a
                                     real benchmark run when written)
@@ -103,10 +121,20 @@ scripts/experiment_phase/
                                     _smoke.py (random-head structural smoke),
                                     run_speculative_benchmark.py (the real
                                     benchmark harness -- --checkpoint-path/
-                                    --dataset-path now resolve for real;
+                                    --dataset-path resolve for real;
+                                    --selector "none"/"identity"/"recent_k:K"
+                                    wraps both the baseline and speculative
+                                    pipelines with the same selector
+                                    instance, for the combination ablation;
                                     --dry-run still available for machinery
                                     self-tests), consolidate_and_plot_results.py
-                                    (merges runs into one table + 3 figures)
+                                    (threshold/MAE/tradeoff figures),
+                                    paired_stats_and_cdf.py (per-sample
+                                    paired diffs + CDF across baseline/
+                                    RecentK-2/speculative/combined),
+                                    plot_ablation_bars.py (MAE+latency bars
+                                    for configs A-D'), build_final_table.py
+                                    (merges everything into one final table)
   assets/                          verify_checkpoint_strict_load.py
                                     (adapter + non-PLM strict-load re-check,
                                     independent of checkpoint_era_runtime's
@@ -128,15 +156,28 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     summary.json, summary.md) -- distinct
                                     from experiments/ because it's the
                                     harness's own defined output contract.
-                                    Now includes real full-1,698-sample runs
+                                    Includes full-1,698-sample runs
                                     (baseline reproduction, 4 selected
-                                    speculative configs) alongside the
-                                    50-sample smoke grids used to select them.
-  consolidated/                    consolidate_and_plot_results.py's merged
-                                    table + 3 figures across all of the above
+                                    speculative configs, and the Selector x
+                                    Speculative ablation: B/D/D') alongside
+                                    the 50-sample smoke grids used to select
+                                    thresholds/gamma.
+  consolidated/                    merged tables + all figures: the 3
+                                    threshold/MAE/tradeoff figures, mae_cdf.png,
+                                    ablation_bars.png, final_table.{csv,md},
+                                    paired_stats_combined_vs_baseline.json
+results/final_<date>/              copies (not moves) of the final table +
+                                    5 figures for handoff -- its own
+                                    README.md says explicitly that the
+                                    results/speculative/ originals are
+                                    authoritative if they ever diverge
 
 manifests/{llama,final}/           inventories and SHA-256 checksums for the
                                     prior reorganization pass
+manifests/final_run_manifest.md    commit hash, package versions, GPU
+                                    model, asset paths + verification,
+                                    seed, and the exact command for every
+                                    run behind FINAL_RESULTS_SUMMARY.md
 
 patches/experiment_phase/          proposed-but-not-applied diffs (e.g. the
                                     accelerate/huggingface-hub dependency fix)
@@ -190,3 +231,26 @@ PHASE_B_REAL_RESULTS.md` is the consolidated writeup.
 
 Also added `src/netllm_litevlm/selectors/attention_topk.py` and
 `tests/selectors/` (new test subdirectory, mirrors the `src/` layout).
+
+## What changed 2026-08-02 (Selector x Speculative ablation + final
+package, evening) — the headline result
+
+Extended `run_speculative_benchmark.py` with `--selector` so the same
+selector instance can wrap both the baseline and speculative pipelines,
+enabling the combination ablation (`results/speculative/20260802T101802Z/`):
+RecentK-2 alone, and RecentK-2 + speculative decoding at two thresholds.
+**Config D (RecentK-2 + speculative) is the first configuration in this
+project to achieve an accuracy improvement AND a latency reduction
+simultaneously**, both measured at full 1,698-sample scale against the
+real checkpoint. Paired per-sample analysis
+(`paired_stats_and_cdf.py`) decomposes this: the accuracy shift is
+attributable almost entirely to RecentK-2 selection, not speculative
+decoding, which composes additively on top of it (`PHASE_B_REAL_RESULTS.md`
+§2 has the full breakdown, including a real, not-uniformly-positive
+per-sample story — 47% of individual samples are slightly worse under
+the combined config despite the aggregate mean/median improving).
+
+Added `docs/final/FINAL_RESULTS_SUMMARY.md` (research narrative),
+`manifests/final_run_manifest.md` (reproducibility record), and
+`results/final_20260802/` (copies for handoff) as the session's closing
+package.
