@@ -136,9 +136,10 @@ def _run_pipeline_over_samples(
     latencies_ms = []
     forward_counts = []
     accepted_counts = []
+    per_sample: List[Dict[str, Any]] = []
     is_cuda = device.startswith("cuda")
 
-    for history_np, future_np, info in samples:
+    for sample_id, (history_np, future_np, info) in enumerate(samples):
         history, future = _normalize(history_np, future_np, dry_run, device, dtype)
 
         def _call():
@@ -151,28 +152,58 @@ def _run_pipeline_over_samples(
             prediction, target = _call()
         if is_cuda:
             torch.cuda.synchronize()
-            latencies_ms.append((time.perf_counter() - started) * 1000.0)
+            latency_ms = (time.perf_counter() - started) * 1000.0
         else:
-            latencies_ms.append(float("nan"))
+            latency_ms = float("nan")
+        latencies_ms.append(latency_ms)
 
         # pipeline.inference returns the model's raw normalized-space
         # ([-1,1]-ish, Tanh-bounded) prediction; target is already
         # raw-degree (see _normalize). Denormalize before comparing, same
         # as run_llama_selector_benchmark.py's `prediction_norm * scale`.
         prediction_degrees = denormalize_data(prediction.float(), "Jin2022")
+        target_float = target.float()
         predictions.append(prediction_degrees.cpu())
-        targets.append(target.float().cpu())
+        targets.append(target_float.cpu())
+
         if hasattr(pipeline, "target_forward_count"):
-            forward_counts.append(pipeline.target_forward_count)
-            accepted_counts.extend(pipeline.accepted_per_iteration)
+            forward_count = pipeline.target_forward_count
+            accepted_this_sample = list(pipeline.accepted_per_iteration)
+            forward_counts.append(forward_count)
+            accepted_counts.extend(accepted_this_sample)
         else:
-            forward_counts.append(pipeline.last_trace["plm_forward_count"])
+            forward_count = pipeline.last_trace["plm_forward_count"]
+            accepted_this_sample = None
+            forward_counts.append(forward_count)
+
+        sample_metrics = evaluate_vp_metrics(
+            prediction_degrees, target_float, checkpoint_available=True
+        )
+        video, user, timestep = int(info[0]), int(info[1]), int(info[2])
+        per_sample.append(
+            {
+                "sample_id": sample_id,
+                "video": video,
+                "user": user,
+                "timestep": timestep,
+                "mae": sample_metrics.mae,
+                "corrected_rmse": sample_metrics.corrected_rotation_aware_rmse,
+                "mean_angular_error": sample_metrics.mean_angular_error,
+                "latency_ms": latency_ms,
+                "target_forward_count": forward_count,
+                "accepted_sum": (
+                    sum(accepted_this_sample) if accepted_this_sample is not None else None
+                ),
+                "finite": bool(torch.isfinite(prediction_degrees).all().item()),
+            }
+        )
 
     return {
         "predictions": torch.cat(predictions, dim=0),
         "targets": torch.cat(targets, dim=0),
         "latencies_ms": latencies_ms,
         "forward_counts": forward_counts,
+        "per_sample": per_sample,
         "accepted_counts": accepted_counts,
     }
 
@@ -231,7 +262,16 @@ def main() -> int:
     parser.add_argument("--checkpoint-path", type=Path, default=None)
     parser.add_argument("--dataset-path", type=Path, default=None)
     parser.add_argument("--base-model-path", type=Path, default=None)
-    parser.add_argument("--thresholds", type=str, default="0.0,0.5,1.0")
+    # acceptance_threshold lives in SpeculativeBlockVerifyPipeline's own
+    # comparison space: normalized (Tanh-bounded, ~[-1,1] per channel)
+    # coordinates, not denormalized degrees -- see
+    # docs/experiment_phase/speculative/PHASE_A_DESIGN.md /
+    # PHASE_B_REAL_RESULTS.md for the empirical calibration (10 real
+    # samples' draft-vs-target normalized L2 disagreement: median 0.174,
+    # most mass in 0.01-0.7, with rare fast-yaw outliers reaching 3-9 that
+    # should stay rejected). This sweep spans strict to generous within
+    # that real range.
+    parser.add_argument("--thresholds", type=str, default="0.05,0.1,0.2,0.35,0.7")
     parser.add_argument("--gammas", type=str, default="2,4,8")
     parser.add_argument("--num-samples", type=int, default=50)
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "results" / "speculative")
@@ -294,6 +334,22 @@ def main() -> int:
 
     metric_available = checkpoint_loaded
 
+    timestamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    output_dir = Path(args.output_dir) / timestamp
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    def _write_per_sample_csv(name: str, per_sample: List[Dict[str, Any]]) -> None:
+        path = output_dir / f"per_sample_{name}.csv"
+        columns = [
+            "sample_id", "video", "user", "timestep", "mae", "corrected_rmse",
+            "mean_angular_error", "latency_ms", "target_forward_count",
+            "accepted_sum", "finite",
+        ]
+        with path.open("w", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(per_sample)
+
     rows: List[Dict[str, Any]] = []
 
     baseline_pipeline = LlamaOldSelectablePipeline(model)
@@ -302,6 +358,7 @@ def main() -> int:
     baseline_run["device"] = device
     baseline_row = _build_row("baseline", None, None, baseline_run, metric_available)
     rows.append(baseline_row)
+    _write_per_sample_csv("baseline", baseline_run["per_sample"])
 
     configs = []
     for threshold in thresholds:
@@ -312,9 +369,8 @@ def main() -> int:
             _reset_memory(device)
             run = _run_pipeline_over_samples(spec_pipeline, samples, args.dry_run, device, dtype)
             run["device"] = device
-            row = _build_row(
-                f"threshold={threshold}_gamma={gamma}", threshold, gamma, run, metric_available
-            )
+            config_name = f"threshold={threshold}_gamma={gamma}"
+            row = _build_row(config_name, threshold, gamma, run, metric_available)
             speedup_claim_valid = (
                 row["target_forward_avg"] < baseline_row["target_forward_avg"]
                 and row["latency_median_ms"] < baseline_row["latency_median_ms"]
@@ -329,13 +385,10 @@ def main() -> int:
             row["accuracy_preserved"] = accuracy_preserved
             rows.append(row)
             configs.append(row)
+            _write_per_sample_csv(config_name, run["per_sample"])
 
     baseline_row["speedup_claim_valid"] = False
     baseline_row["accuracy_preserved"] = True
-
-    timestamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-    output_dir = Path(args.output_dir) / timestamp
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     csv_path = output_dir / "results.csv"
     with csv_path.open("w", newline="") as stream:

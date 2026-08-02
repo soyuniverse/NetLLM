@@ -69,6 +69,11 @@ class SpeculativeBlockVerifyPipeline(nn.Module):
         selector: Optional[BaseSelector] = None,
         draft_model: Optional[ContinuousDraftModel] = None,
         gamma: int = 4,
+        # L2 distance between draft and target task_head outputs, compared
+        # in the task head's own Tanh-bounded NORMALIZED output space
+        # (~[-1,1] per channel) -- not denormalized degrees. Caller-side
+        # denormalization (see run_speculative_benchmark.py) happens after
+        # this pipeline returns.
         acceptance_threshold: float = 0.0,
     ):
         super().__init__()
