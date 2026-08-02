@@ -7,16 +7,17 @@ established by an earlier reorganization pass
 (immutability of referenced paths, move policy, symlink-over-copy). This
 file is the current *map*, re-audited and refreshed as of 2026-08-02.
 
-**Audit finding (2026-08-02, re-run three times this day — asset
-recovery session, results/AttentionTopK session, then this
-Selector-x-Speculative-ablation + final-package session):** everything
-added in all three passes already matches the canonical layout those
-rules define, or an explicitly user-instructed new path
-(`results/speculative/`, `tests/selectors/`, `results/final_<date>/`,
-all noted below). No file needed to move in any pass. The one correction
-from the first pass (stray base-model files at the repo root, moved to
-`/root/llama2-7b-base/`) still stands; nothing new like it appeared in
-the second or third passes.
+**Audit finding (2026-08-02, re-run four times this day — asset
+recovery session, results/AttentionTopK session, Selector-x-Speculative-
+ablation + final-package session, then this tail-analysis +
+generalization + backup session):** everything added in all four passes
+already matches the canonical layout those rules define, or an
+explicitly user-instructed new path (`results/speculative/`,
+`tests/selectors/`, `results/final_<date>/`, `docs/experiment_phase/
+analysis/`, all noted below). No file needed to move in any pass. The
+one correction from the first pass (stray base-model files at the repo
+root, moved to `/root/llama2-7b-base/`) still stands; nothing new like
+it appeared in later passes.
 
 ```text
 /root/NetLLM/                      this repository
@@ -27,6 +28,15 @@ the second or third passes.
                                     Moved here 2026-08-02 from the repo root,
                                     where they had accidentally landed from a
                                     prior download.
+/root/backup_20260802/             off-instance backup copy (results/,
+                                    docs/+manifests/, the two staging
+                                    zips) -- NOT in the repo, see
+                                    docs/final/BACKUP_MANIFEST.md. Not a
+                                    duplicate of the git history: this
+                                    instance has lost checkpoint/dataset
+                                    assets twice already, so this exists
+                                    as a second copy pending an
+                                    off-instance scp download.
 
 docs/
   final/                           cross-phase conclusions, final manuals
@@ -37,7 +47,13 @@ docs/
                                     presentation (goal status ->
                                     implementation -> verification ->
                                     performance -> conclusion/next-work,
-                                    same structure as the 7.26 report)
+                                    same structure as the 7.26 report;
+                                    includes a section 6 mapping all 7
+                                    figures to a presentation flow)
+    BACKUP_MANIFEST.md             off-instance backup record (this
+                                    instance lost checkpoint/dataset
+                                    assets twice already): file list,
+                                    sizes, sha256, scp download commands
   implementation/                  implementation explanations (how the
                                     wrapper code works, not phase evidence)
   experiment_phase/                phase-specific evidence, one dir per phase
@@ -54,6 +70,12 @@ docs/
                                     absence, zip-structure mismatches found
                                     and resolved, strict-load + dataset +
                                     sample-for-sample MAE re-verification
+    analysis/                      TAIL_ANALYSIS.md: which samples degrade
+                                    under the headline combined config and
+                                    why (high-motion-variance regime,
+                                    attributable to RecentK-2 selection,
+                                    not speculative decoding -- Spearman
+                                    correlations + Mann-Whitney test)
     phase0/ .. phase3a/, recovery/, resume/    earlier phases, stable
   REPO_LAYOUT.md                   this file
   MEETING_NOTES.md, RESEARCH_DIRECTION.md, *.pdf   project-level references
@@ -134,7 +156,12 @@ scripts/experiment_phase/
                                     RecentK-2/speculative/combined),
                                     plot_ablation_bars.py (MAE+latency bars
                                     for configs A-D'), build_final_table.py
-                                    (merges everything into one final table)
+                                    (merges everything into one final table),
+                                    tail_analysis.py (per-sample degradation
+                                    vs. history motion speed/acceleration/
+                                    accept rate, Spearman + Mann-Whitney),
+                                    wu2017_generalization_spotcheck.py
+                                    (200-sample distribution-shift check)
   assets/                          verify_checkpoint_strict_load.py
                                     (adapter + non-PLM strict-load re-check,
                                     independent of checkpoint_era_runtime's
@@ -147,6 +174,8 @@ experiments/vp/                    runtime results (never mixed with source)
                                     session's *.log files (gitignored,
                                     redundant with the committed JSON/CSV)
   attention_topk_7b_smoke/         AttentionTopK vs RecentK, real checkpoint
+  wu2017_generalization_spotcheck/ 200-sample distribution-shift check,
+                                    real checkpoint (fine-tuned on Jin2022)
   llama_7b_speculative_smoke/      random-head 7B structural smoke JSON
   llama_speculative_smoke/         prior draft-and-verify prototype's result
   llama_benchmark/, llama_*        earlier phase runtime outputs, stable
@@ -162,10 +191,13 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     Speculative ablation: B/D/D') alongside
                                     the 50-sample smoke grids used to select
                                     thresholds/gamma.
-  consolidated/                    merged tables + all figures: the 3
+  consolidated/                    merged tables + all 7 figures: the 3
                                     threshold/MAE/tradeoff figures, mae_cdf.png,
-                                    ablation_bars.png, final_table.{csv,md},
-                                    paired_stats_combined_vs_baseline.json
+                                    ablation_bars.png, tail_velocity_vs_diff.png,
+                                    tail_acceptrate_vs_diff.png,
+                                    final_table.{csv,md},
+                                    paired_stats_combined_vs_baseline.json,
+                                    tail_analysis_stats.json
 results/final_<date>/              copies (not moves) of the final table +
                                     5 figures for handoff -- its own
                                     README.md says explicitly that the
@@ -254,3 +286,27 @@ Added `docs/final/FINAL_RESULTS_SUMMARY.md` (research narrative),
 `manifests/final_run_manifest.md` (reproducibility record), and
 `results/final_20260802/` (copies for handoff) as the session's closing
 package.
+
+## What changed 2026-08-02 (tail analysis + generalization + backup,
+night) — closing the last scientific gaps and de-risking the instance
+
+Answered the open question from the previous pass ("why do 47% of
+samples degrade under config D"): `docs/experiment_phase/analysis/
+TAIL_ANALYSIS.md` finds it's a high-motion-variance regime (top-5%-worst
+samples have 2.16x the history motion speed of the rest, p=3.0e-24),
+not a simple "high motion is bad" effect (population-wide correlation is
+actually negative), and attributes it 100% to RecentK-2 selection in the
+tail, with no exceptions. Ran a 200-sample generalization spot-check on
+Wu2017 (found already present from the earlier data.zip extraction,
+unseen during this checkpoint's Jin2022 fine-tuning) confirming both the
+accuracy improvement and latency reduction hold under distribution
+shift.
+
+Given this instance has lost its checkpoint/dataset assets twice
+already, packaged an off-instance backup (`/root/backup_20260802/`,
+outside the repo, `docs/final/BACKUP_MANIFEST.md`) of results/,
+docs/+manifests/, and the two staging zips, with sha256 checksums for
+every file. Added `*.tar.gz`/`*.tar`/`*.zip` to `.gitignore` as a
+defense-in-depth safety net (the backup directory was already outside
+the repo, so this doesn't change what gets committed, but closes a real
+gap for the repo tree generally).
