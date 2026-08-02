@@ -1,0 +1,72 @@
+{
+  "checkpoint_loaded": true,
+  "num_samples": 50,
+  "baseline": {
+    "mae": 11.036768085417648,
+    "corrected_rmse": 22.132159381010695,
+    "latency_median_ms": 577.2419879212976,
+    "selector_forward_count": null
+  },
+  "k_comparison": {
+    "8": {
+      "attention_top_k": {
+        "mae": 11.162241454946498,
+        "corrected_rmse": 22.245248279323892,
+        "latency_median_ms": 577.1019770763814,
+        "selector_forward_count": 50
+      },
+      "recent_k": {
+        "mae": 11.124345592208206,
+        "corrected_rmse": 22.332131584648625,
+        "latency_median_ms": 577.4851310998201,
+        "selector_forward_count": null
+      },
+      "attention_mae_minus_recent_mae": 0.03789586273829215
+    },
+    "6": {
+      "attention_top_k": {
+        "mae": 11.335791139975191,
+        "corrected_rmse": 22.511451784223468,
+        "latency_median_ms": 578.8525268435478,
+        "selector_forward_count": 50
+      },
+      "recent_k": {
+        "mae": 10.984009140484035,
+        "corrected_rmse": 22.271884381243414,
+        "latency_median_ms": 577.7467121370137,
+        "selector_forward_count": null
+      },
+      "attention_mae_minus_recent_mae": 0.3517819994911555
+    },
+    "4": {
+      "attention_top_k": {
+        "mae": 11.520563148674865,
+        "corrected_rmse": 22.99818915570122,
+        "latency_median_ms": 578.5645921714604,
+        "selector_forward_count": 50
+      },
+      "recent_k": {
+        "mae": 10.582026918547848,
+        "corrected_rmse": 22.058913582784406,
+        "latency_median_ms": 578.013707883656,
+        "selector_forward_count": null
+      },
+      "attention_mae_minus_recent_mae": 0.938536230127017
+    },
+    "2": {
+      "attention_top_k": {
+        "mae": 11.189642145397762,
+        "corrected_rmse": 21.210239149149814,
+        "latency_median_ms": 580.0490728579462,
+        "selector_forward_count": 50
+      },
+      "recent_k": {
+        "mae": 10.017189621763924,
+        "corrected_rmse": 20.1992407737527,
+        "latency_median_ms": 577.6157509535551,
+        "selector_forward_count": null
+      },
+      "attention_mae_minus_recent_mae": 1.1724525236338383
+    }
+  }
+}
