@@ -1,0 +1,16 @@
+{
+  "checkpoint_path": "/root/NetLLM-assets/checkpoints/try_llama2_7b",
+  "checkpoint_loaded": true,
+  "load_seconds": 2.7779112812131643,
+  "adapter_missing_keys": [],
+  "adapter_unexpected_keys": [],
+  "adapter_value_mismatches": [],
+  "adapter_missing_count": 0,
+  "adapter_unexpected_count": 0,
+  "adapter_value_mismatch_count": 0,
+  "non_plm_missing_keys": [],
+  "non_plm_unexpected_keys": [],
+  "non_plm_missing_count": 0,
+  "non_plm_unexpected_count": 0,
+  "strict_load_pass": true
+}
