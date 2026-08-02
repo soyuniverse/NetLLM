@@ -30,6 +30,10 @@ and cross-checked against `run_old.py`'s own assembly order (see below):
 - `viewport_prediction/models/low_rank.py` — `peft_model` (LoRA wrapping
   helper).
 - `viewport_prediction/utils/normalize.py` — `normalize_data`/`denormalize_data`.
+- `viewport_prediction/dataset/load_dataset.py` — `create_dataset`, used by
+  `scripts/experiment_phase/speculative/run_speculative_benchmark.py` to
+  load real Jin2022 test samples once the dataset is restored (its own
+  `--dry-run` mode does not use this file).
 - `viewport_prediction/run_old.py` — kept for reference only (not imported
   anywhere in this repo); its lines ~254-292 are the canonical assembly
   order this project's scripts follow: `load_plm` (this project uses

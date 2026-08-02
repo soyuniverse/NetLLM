@@ -1,0 +1,11 @@
+config,threshold,gamma,num_samples,mae,corrected_rmse,test_loss,latency_median_ms,target_forward_avg,accepted_per_iteration_avg,peak_allocated_mib,peak_reserved_mib,metric_valid
+baseline,,,5,,,,573.2865892350674,20.0,,12996.1162109375,13026.0,False
+threshold=0.0_gamma=2,0.0,2,5,,,,614.8600298911333,20.0,0.0,13011.0869140625,13040.0,False
+threshold=0.0_gamma=4,0.0,4,5,,,,617.1476999297738,20.0,0.0,13011.1171875,13042.0,False
+threshold=0.0_gamma=8,0.0,8,5,,,,624.8529329895973,20.0,0.0,13011.177734375,13042.0,False
+threshold=0.5_gamma=2,0.5,2,5,,,,329.8576697707176,11.0,1.8,13003.84033203125,13042.0,False
+threshold=0.5_gamma=4,0.5,4,5,,,,213.68055418133736,7.0,3.0,13000.35400390625,13042.0,False
+threshold=0.5_gamma=8,0.5,8,5,,,,155.0003346055746,5.0,4.25,13003.9306640625,13042.0,False
+threshold=3.0_gamma=2,3.0,2,5,,,,331.9223108701408,11.0,1.9,13005.08251953125,13042.0,False
+threshold=3.0_gamma=4,3.0,4,5,,,,180.59113807976246,6.0,3.6,12999.111328125,13042.0,False
+threshold=3.0_gamma=8,3.0,8,5,,,,121.74192862585187,4.0,6.0,12998.43017578125,13042.0,False
