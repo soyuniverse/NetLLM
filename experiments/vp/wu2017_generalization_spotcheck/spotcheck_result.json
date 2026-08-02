@@ -1,0 +1,21 @@
+{
+  "dataset": "Wu2017",
+  "note": "checkpoint fine-tuned on Jin2022, not Wu2017 -- this is a distribution-shift generalization spot-check, not an apples-to-apples comparison with the Jin2022 numbers elsewhere in this session",
+  "test_split_total": 1395,
+  "num_samples": 200,
+  "sample_stride": 6,
+  "A_baseline": {
+    "mae": 15.476427505385413,
+    "corrected_rmse": 30.127323858950096,
+    "latency_median_ms": 566.9656307436526,
+    "target_forward_count_avg": 20.0
+  },
+  "D_recentk2_plus_speculative": {
+    "mae": 13.050342565603215,
+    "corrected_rmse": 25.892660935421375,
+    "latency_median_ms": 121.02809129282832,
+    "target_forward_count_avg": 4.025
+  },
+  "mae_improvement_holds": true,
+  "latency_reduction_holds": true
+}
