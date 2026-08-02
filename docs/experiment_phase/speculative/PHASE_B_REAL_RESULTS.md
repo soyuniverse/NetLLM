@@ -63,7 +63,94 @@ against a randomly-initialized head (`PHASE_B_7B_SMOKE.md`). No general
 measured on one GPU, one process, fp16, this checkpoint, this dataset —
 not benchmarked against other implementations or hardware.
 
-## 2. AttentionTopK selector — 50-sample preliminary comparison
+## 2. Selector × Speculative combination — the headline result
+
+**Compatibility gate (prerequisite, tiny CPU model + 5 real-checkpoint
+samples).** Before trusting any combined run: traced
+`block_verify.py` and confirmed the draft model's velocity extrapolation
+always uses the raw `history` argument passed to `auto_regressive()`,
+never the selector-reduced embedding sequence — a selector's K has zero
+effect on what the draft sees, only on what the target LLM's initial
+prefill sees. KV-cache position indexing with a selector-shortened
+prefill was checked directly (not just argued from code reading):
+`SpeculativeBlockVerifyPipeline` vs `LlamaOldSelectablePipeline`, both
+wrapping `RecentKSelector(k)`, match to 1e-5 for k in {4, 6, 10} on a
+tiny CPU model (`tests/speculative/test_block_verify.py`). On the real
+checkpoint, `RecentKSelector(2)` + `SpeculativeBlockVerifyPipeline`
+(threshold=0) matched `RecentKSelector(2)` alone within 0.00146 max abs
+diff over 5 samples (under the established 2e-3 fp16 tolerance), forward
+count exactly 20 every time. Gate passed.
+
+**Full 1,698-sample ablation**, `--selector recent_k:2`:
+
+| config | MAE | corrected RMSE | latency median | target forward avg |
+|---|---:|---:|---:|---:|
+| A. baseline | 12.798559 | 27.118723 | 571.7 ms | 20.00 |
+| B. RecentK-2 only | 10.846867 | 22.486722 | 623.0 ms | 20.00 |
+| C. Speculative only (threshold=0.35, gamma=8) | 12.831302 | 27.141736 | 124.4 ms | 4.21 |
+| **D. RecentK-2 + Speculative (threshold=0.35, gamma=8)** | **10.895102** | 22.547304 | **122.2 ms** | 4.01 |
+| D'. RecentK-2 + Speculative (threshold=0.70, gamma=8) | 10.902756 | 22.580308 | 121.9 ms | 4.00 |
+
+B reproduces the 7.26 report's RecentK-2 result (10.847409, diff
+0.000542) through this session's harness — confirming it was safe to
+build the combination on top of.
+
+**Verdict for D: MAE ≤ baseline (A) AND latency ≤ C — both hold.**
+10.895102 ≤ 12.798559 (an *improvement*, not just preservation), and
+122.2 ms ≤ 124.4 ms — confirming the expected prefill-shortening effect
+from combining a shorter selected history with speculative decoding's
+forward-count reduction, though modest (−1.76%) since the KV-cache
+prefill is a small fraction of the four target forwards' total cost
+through the full 32-layer model. **D is the confirmed headline
+configuration**, the first time in this project where an accuracy
+improvement and a latency reduction were achieved simultaneously against
+the real checkpoint at full scale. D' (threshold=0.70) shows the same
+mild threshold-sensitivity already documented for the selector-free
+configs: slightly higher MAE (+0.07% vs. D), slightly lower forward
+count.
+
+**Paired per-sample analysis, D vs. A** (`results/speculative/consolidated/
+paired_stats_combined_vs_baseline.json`, n=1,698, `combined_vs_baseline`):
+
+| statistic | value |
+|---|---:|
+| median (p50) diff | −0.095° |
+| p90 diff | +1.300° |
+| p99 diff | +7.773° |
+| mean diff | −1.903° |
+| samples degraded (D worse than A) | 800 / 1,698 (47.1%) |
+
+The aggregate mean/median both improve, but this is **not a uniform
+per-sample win**: 47% of individual samples have slightly higher MAE
+under D than under A, and the tail is where D can be meaningfully worse
+(p99 +7.8°). This is not evidence of interference between the selector
+and speculative decoding, though — three further paired comparisons
+isolate the cause:
+
+| comparison | mean diff | p99 diff | degraded fraction |
+|---|---:|---:|---:|
+| RecentK-2 vs. baseline | −1.952° | +7.790° | 44.0% |
+| Speculative-only vs. baseline | +0.033° | +0.387° | 62.2% |
+| **Combined vs. RecentK-2 alone** | **+0.048°** | **+0.376°** | 66.4% |
+
+`combined_vs_baseline`'s mean (−1.903°) ≈ `recent_k2_vs_baseline`'s mean
+(−1.952°) + `combined_vs_recent_k2`'s mean (+0.048°). **The accuracy
+shift — both its improvement and its 47%-of-samples/p99 caveats — is
+attributable almost entirely to RecentK-2 selection.** Speculative
+decoding on top of it costs a consistent, small ~+0.03–0.05° of mean MAE
+(matching its own ~+0.033° standalone cost against plain baseline almost
+exactly), while delivering the latency reduction. The two effects
+compose additively rather than interacting destructively.
+
+The CDF below (`results/speculative/consolidated/mae_cdf.png`) shows
+this directly: baseline/speculative-only (solid blue / dashed green) are
+visually indistinguishable, as are RecentK-2/combined (solid orange /
+dashed red) — speculative decoding barely moves the per-sample error
+distribution either way; RecentK-2 is what shifts it.
+
+![Per-sample MAE CDF](../../../results/speculative/consolidated/mae_cdf.png)
+
+## 3. AttentionTopK selector — 50-sample preliminary comparison
 
 **Not full-scale.** `experiments/vp/attention_topk_7b_smoke/smoke_result.json`,
 50 samples, same real checkpoint. Recorded as measured, not extended to
@@ -100,7 +187,7 @@ expected, since `LlamaOldSelectablePipeline` still performs the full
 selecting fewer history tokens shortens the *initial* sequence slightly
 but the dominant cost is the 20 uncached forwards themselves.
 
-## 3. Figures
+## 4. Figures
 
 `results/speculative/consolidated/` (50-sample smoke grid, for full
 threshold coverage — the 4-point full-scale table above is the
@@ -116,26 +203,38 @@ across the swept range):
   low latency (~120-330ms) and near-baseline MAE; baseline (star) and
   Recent-K k=2 (triangle) are plotted for reference. Recent-K's MAE
   measurement at 50-sample scale sits below baseline, consistent with the
-  K=2 row in §2's table — noted, not explained further (small-sample
-  effect is plausible but not verified).
+  full-scale RecentK-2 result in §2 — noted, not explained further there
+  (small-sample effect is plausible but the full-scale run in §2 confirms
+  the direction, at least, is real).
+- `mae_cdf.png` (full 1,698-sample scale, unlike the three above) —
+  baseline/speculative-only and RecentK-2/combined form two visually
+  near-identical curve pairs; see §2 for the paired-statistics
+  explanation (the selector drives the shift, speculative decoding barely
+  moves the per-sample distribution).
 
 Regenerate with `scripts/experiment_phase/speculative/consolidate_and_plot_results.py`
-(reads the specific run directories it's pinned to; update its constants
-if a run is re-done under a new timestamp).
+(threshold/MAE/tradeoff figures) and
+`scripts/experiment_phase/speculative/paired_stats_and_cdf.py` (CDF +
+paired stats) — both read specific run directories they're pinned to;
+update their constants if a run is re-done under a new timestamp.
 
-## 4. What this does and doesn't establish
+## 5. What this does and doesn't establish
 
 **Established**: block verification, on the real fine-tuned checkpoint
 and real Jin2022 test data, reduces both measured target-forward-count
 and measured wall-clock latency by roughly 4-5x while keeping MAE within
 1% of baseline, across a threshold range with no sign of a sharp accuracy
 cliff up to at least 2.5x the empirically-typical draft-target
-disagreement scale.
+disagreement scale. Combined with RecentK-2 selection (§2), the same
+speculative decoding delivers its latency reduction on top of RecentK-2's
+own accuracy improvement over baseline, with the two effects composing
+additively (confirmed via paired per-sample decomposition, not just
+matching aggregate numbers) rather than interacting destructively.
 
 **Not established**: general speedup claims independent of this exact
 setup (one RTX 4090, fp16, this checkpoint); AttentionTopK as a
 worthwhile selector for this task (the opposite trend was measured, at
 50-sample scale); accuracy/speed behavior on the full held-out set for
-thresholds beyond 2.5 or gammas beyond 8; combined
-selector+speculative-decoding behavior (not tested together this
-session).
+thresholds beyond 2.5 or gammas beyond 8; whether the RecentK-2 +
+speculative composition result generalizes to other selector/threshold/
+gamma combinations beyond the two (D, D') tested at full scale.
