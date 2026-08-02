@@ -12,6 +12,7 @@ accuracy or real acceptance rates on Jin2022.
 """
 
 from types import SimpleNamespace
+from typing import List
 
 import pytest
 import torch
@@ -19,9 +20,11 @@ import torch.nn as nn
 from transformers import LlamaConfig
 from transformers.models.llama.modeling_llama import LlamaModel
 
+from netllm_litevlm.selectors import RecentKSelector
 from netllm_litevlm.speculative import (
     ContinuousDraftModel,
     DraftOutput,
+    RecentVelocityDraft,
     SpeculativeBlockVerifyPipeline,
     slice_past_key_values,
 )
@@ -312,3 +315,106 @@ def test_slice_past_key_values_truncates_each_layer():
         assert trunc_v.shape == (2, 1, 4, 2)
         assert torch.equal(trunc_k, orig_k[:, :, :4, :])
         assert torch.equal(trunc_v, orig_v[:, :, :4, :])
+
+
+# --- Selector + speculative combination gates ---------------------------
+# Requested before any (Selector, SpeculativeBlockVerifyPipeline) ablation
+# is trusted at real-checkpoint scale.
+
+HIS_WINDOW = 10
+
+
+def _ten_step_large_velocity_history(seed: int) -> torch.Tensor:
+    """Same large-velocity construction as _large_velocity_history, but
+    HIS_WINDOW=10 steps long so RecentKSelector(k<10) has something real
+    to select from."""
+    torch.manual_seed(seed)
+    base = torch.randn(1, 1, 3)
+    velocity = torch.full((1, 1, 3), 5.0)
+    steps = torch.arange(HIS_WINDOW).view(1, HIS_WINDOW, 1).float()
+    return base + steps * velocity
+
+
+class _RecordingDraftModel(ContinuousDraftModel):
+    """Wraps RecentVelocityDraft, recording every draft_history it was
+    called with so a test can compare across selector configurations
+    without needing to inspect block_verify.py's internals directly."""
+
+    def __init__(self):
+        super().__init__()
+        self._inner = RecentVelocityDraft()
+        self.calls: List[torch.Tensor] = []
+
+    def forward(self, history, steps, context=None):
+        self.calls.append(history.clone())
+        return self._inner(history, steps, context)
+
+
+def test_draft_velocity_ignores_selector_k_uses_full_history():
+    # block_verify.py's draft_history = cat(history, *confirmed) always
+    # uses the `history` argument passed into auto_regressive() directly
+    # -- never `sequence`/the selector's embeddings -- so the selector's
+    # reduction from HIS_WINDOW to K should have zero effect on what the
+    # draft model sees, regardless of K.
+    torch.manual_seed(0)
+    pipeline = _make_pipeline(FUT_WINDOW)
+    history = _ten_step_large_velocity_history(seed=0)
+
+    draft_full = _RecordingDraftModel()
+    speculative_full = SpeculativeBlockVerifyPipeline(
+        pipeline, draft_model=draft_full, gamma=GAMMA, acceptance_threshold=0.0
+    )
+    with torch.no_grad():
+        speculative_full.auto_regressive(history, None)
+
+    draft_selected = _RecordingDraftModel()
+    speculative_selected = SpeculativeBlockVerifyPipeline(
+        pipeline,
+        selector=RecentKSelector(4),
+        draft_model=draft_selected,
+        gamma=GAMMA,
+        acceptance_threshold=0.0,
+    )
+    with torch.no_grad():
+        speculative_selected.auto_regressive(history, None)
+
+    # The confirmed/carry portion of draft_history legitimately differs
+    # between the two runs (it's the LLM's own output, and the selector
+    # changes what the LLM sees) -- that's not what's under test here.
+    # What must hold regardless of K is that every draft_history call's
+    # *original-history* prefix is exactly the untruncated HIS_WINDOW
+    # history, never a K-selected slice of it.
+    assert len(draft_full.calls) == len(draft_selected.calls)
+    for full_call, selected_call in zip(draft_full.calls, draft_selected.calls):
+        assert full_call.shape[1] >= HIS_WINDOW
+        assert selected_call.shape[1] >= HIS_WINDOW
+        assert torch.equal(full_call[:, :HIS_WINDOW, :], history)
+        assert torch.equal(selected_call[:, :HIS_WINDOW, :], history)
+
+
+@pytest.mark.parametrize("k", [4, 6, 10])
+def test_threshold_zero_matches_baseline_with_recent_k_selector(k):
+    # Combined-pipeline exactness gate: KV-cache position indexing must
+    # stay correct when the initial prefill length is K (from the
+    # selector) instead of HIS_WINDOW, for every K including the
+    # no-op K=HIS_WINDOW case.
+    torch.manual_seed(1)
+    pipeline = _make_pipeline(FUT_WINDOW)
+    baseline = LlamaOldSelectablePipeline(pipeline, selector=RecentKSelector(k))
+    speculative = SpeculativeBlockVerifyPipeline(
+        pipeline, selector=RecentKSelector(k), gamma=GAMMA, acceptance_threshold=0.0
+    )
+
+    for seed in range(5):
+        history = _ten_step_large_velocity_history(seed)
+        with torch.no_grad():
+            expected = baseline.auto_regressive(history, None)
+            actual = speculative.auto_regressive(history, None)
+
+        assert actual.shape == expected.shape == (1, FUT_WINDOW, 3)
+        max_abs_diff = (actual - expected).abs().max().item()
+        assert torch.allclose(actual, expected, atol=1e-5, rtol=0), (
+            f"k={k} seed={seed}: max abs diff {max_abs_diff}"
+        )
+        assert speculative.target_forward_count == FUT_WINDOW
+        assert speculative.last_selection_output.selected_length == k
