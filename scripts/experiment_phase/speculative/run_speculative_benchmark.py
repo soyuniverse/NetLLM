@@ -128,6 +128,9 @@ def _normalize(history_np, future_np, dry_run: bool, device: str, dtype):
 def _run_pipeline_over_samples(
     pipeline, samples, dry_run: bool, device: str, dtype
 ) -> Dict[str, Any]:
+    sys.path.insert(0, str(UPSTREAM_VP_ROOT))
+    from utils.normalize import denormalize_data
+
     predictions = []
     targets = []
     latencies_ms = []
@@ -152,7 +155,12 @@ def _run_pipeline_over_samples(
         else:
             latencies_ms.append(float("nan"))
 
-        predictions.append(prediction.float().cpu())
+        # pipeline.inference returns the model's raw normalized-space
+        # ([-1,1]-ish, Tanh-bounded) prediction; target is already
+        # raw-degree (see _normalize). Denormalize before comparing, same
+        # as run_llama_selector_benchmark.py's `prediction_norm * scale`.
+        prediction_degrees = denormalize_data(prediction.float(), "Jin2022")
+        predictions.append(prediction_degrees.cpu())
         targets.append(target.float().cpu())
         if hasattr(pipeline, "target_forward_count"):
             forward_counts.append(pipeline.target_forward_count)

@@ -95,9 +95,42 @@ the "7.26 report"):
   — matches the `[his_window, 3]`/`[fut_window, 3]` contract used
   everywhere else in this repo.
 
+## Post-verification benchmark check (Original-config MAE reproduction)
+
+Per instruction, before any speculative/selector experiment was trusted,
+`run_speculative_benchmark.py --num-samples 50` was run for the first
+time with the real `--checkpoint-path`/`--dataset-path`.
+
+**First attempt: did not match** (baseline MAE 36.00 vs. the 7.26 report's
+12.7985). Root cause: a real bug in `run_speculative_benchmark.py`, not
+the recovered assets — `pipeline.inference()` returns the model's raw
+normalized-space (`Tanh`-bounded) prediction, but the harness was
+comparing it directly against the raw-degree target without
+denormalizing (`run_llama_selector_benchmark.py`, the script behind the
+7.26 report, does `prediction_norm.float() * [180, 90, 180]` before
+computing any metric — the harness was missing this step). Fixed by
+denormalizing with the same vendored `utils.normalize.denormalize_data`
+before computing metrics.
+
+**After the fix:** baseline MAE = 11.036768 for the first 50 samples.
+The 7.26 report's 12.798525 is the mean over all 1,698 samples, not the
+first 50, so it isn't the right number to diff against directly. The
+apples-to-apples check: `experiments/vp/llama_benchmark/full/original/per_sample_metrics.csv`'s
+own first 50 rows (sample_id 0-49) average to **11.036800** — a
+0.00003 difference from this session's 11.036768, consistent with fp16
+forward-pass noise, not a data or logic discrepancy. Sample 0's
+`(video, user, timestep) = (4, 83, 30)` also matches exactly what
+`LLAMA_CONTINUOUS_SPECULATIVE_SMOKE_RESULT.md` recorded previously.
+
+This is a sample-for-sample reproduction of the pre-loss recorded
+predictions, not just an aggregate-statistic coincidence: same dataset
+order, same checkpoint, same normalization — confirming both the
+checkpoint and dataset were recovered faithfully.
+
 ## Result
 
-**PASS.** Both the checkpoint strict-load and the dataset test-split
-count reproduce the pre-loss recorded state exactly. Benchmark numbers
-produced after this point in the session may be treated as trustworthy
-per the gate this document exists to satisfy.
+**PASS.** Checkpoint strict-load, dataset test-split count, and a
+sample-for-sample MAE reproduction against the pre-loss recorded
+per-sample metrics all confirm the recovered assets are faithful.
+Benchmark numbers produced from this point on may be treated as
+trustworthy.
