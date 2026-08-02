@@ -1,0 +1,87 @@
+{
+  "accuracy_degradation_tolerance": 0.05,
+  "accuracy_preserved_criterion": "mae <= baseline_mae * (1 + 0.05)",
+  "baseline": {
+    "accepted_per_iteration_avg": null,
+    "accuracy_preserved": true,
+    "config": "baseline",
+    "corrected_rmse": 22.132159381010695,
+    "gamma": null,
+    "latency_median_ms": 569.3689482286572,
+    "mae": 11.036768085417648,
+    "metric_valid": true,
+    "num_samples": 50,
+    "peak_allocated_mib": 12996.11669921875,
+    "peak_reserved_mib": 13086.0,
+    "speedup_claim_valid": false,
+    "target_forward_avg": 20.0,
+    "test_loss": null,
+    "threshold": null
+  },
+  "checkpoint_loaded": true,
+  "configs": [
+    {
+      "accepted_per_iteration_avg": 6.185430463576159,
+      "accuracy_preserved": true,
+      "config": "threshold=1.0_gamma=8",
+      "corrected_rmse": 22.171438161914658,
+      "gamma": 8,
+      "latency_median_ms": 121.4685111772269,
+      "mae": 11.057485279815893,
+      "metric_valid": true,
+      "num_samples": 50,
+      "peak_allocated_mib": 13002.93115234375,
+      "peak_reserved_mib": 13086.0,
+      "speedup_claim_valid": true,
+      "target_forward_avg": 4.02,
+      "test_loss": null,
+      "threshold": 1.0
+    },
+    {
+      "accepted_per_iteration_avg": 6.23841059602649,
+      "accuracy_preserved": true,
+      "config": "threshold=1.5_gamma=8",
+      "corrected_rmse": 22.182884303845075,
+      "gamma": 8,
+      "latency_median_ms": 121.38463649898767,
+      "mae": 11.063315919337173,
+      "metric_valid": true,
+      "num_samples": 50,
+      "peak_allocated_mib": 13001.4306640625,
+      "peak_reserved_mib": 13086.0,
+      "speedup_claim_valid": true,
+      "target_forward_avg": 4.02,
+      "test_loss": null,
+      "threshold": 1.5
+    },
+    {
+      "accepted_per_iteration_avg": 6.2781456953642385,
+      "accuracy_preserved": true,
+      "config": "threshold=2.5_gamma=8",
+      "corrected_rmse": 22.09694531296065,
+      "gamma": 8,
+      "latency_median_ms": 121.60742585547268,
+      "mae": 11.08302636426439,
+      "metric_valid": true,
+      "num_samples": 50,
+      "peak_allocated_mib": 13001.4306640625,
+      "peak_reserved_mib": 13086.0,
+      "speedup_claim_valid": true,
+      "target_forward_avg": 4.02,
+      "test_loss": null,
+      "threshold": 2.5
+    }
+  ],
+  "dry_run": false,
+  "gammas": [
+    8
+  ],
+  "metric_available": true,
+  "num_samples": 50,
+  "speedup_claim_criterion": "target_forward_avg < baseline AND latency_median_ms < baseline (both measured)",
+  "thresholds": [
+    1.0,
+    1.5,
+    2.5
+  ]
+}
