@@ -111,11 +111,26 @@ docs/
                                     fresh instance is normal, not a loss --
                                     only checkpoint/dataset are the actual
                                     loss). Splits the gate into Gate-A
-                                    (model-independent; still INCOMPLETE,
-                                    checkpoint/dataset zips remain absent)
-                                    and Gate-B (needs the base-weight
-                                    re-download in progress + the
-                                    checkpoint/dataset zips; deferred).
+                                    (model-independent) and Gate-B (needs
+                                    the base model). Both COMPLETE by the
+                                    end of the same day: checkpoint/
+                                    dataset zips arrived via a Google
+                                    Drive relay (scp had connectivity
+                                    problems), checksums matched
+                                    BACKUP_MANIFEST.md exactly, base
+                                    weights finished downloading, and a
+                                    full strict load + 50-sample MAE
+                                    reproduction (11.036768 to 8 sig figs)
+                                    both passed. Original INCOMPLETE
+                                    record preserved in the same file as
+                                    history, not deleted.
+                                    NEW_INSTANCE_CALIBRATION.md: 200-sample
+                                    A vs. D spot-check once Gate-B passed
+                                    -- MAE direction/magnitude consistent
+                                    with the 2026-08-02 reference; latency
+                                    is instance-specific (~16-18% higher
+                                    absolute on this GPU) and should never
+                                    be diffed across instances directly.
     analysis/                      TAIL_ANALYSIS.md: which samples degrade
                                     under the headline combined config and
                                     why (high-motion-variance regime,
@@ -228,9 +243,16 @@ scripts/experiment_phase/
   phase1/ .. phase3a/               earlier phase scripts, stable
 
 experiments/vp/                    runtime results (never mixed with source)
-  asset_recovery/                  checkpoint_strict_load.json + this
-                                    session's *.log files (gitignored,
-                                    redundant with the committed JSON/CSV)
+  asset_recovery/                  checkpoint_strict_load.json (2026-08-02) +
+                                    checkpoint_strict_load_20260809.json
+                                    (same procedure re-run after the third
+                                    asset loss + Google-Drive-relay
+                                    recovery; a dated sibling, not an
+                                    overwrite -- the verification script
+                                    itself refuses to clobber the original)
+                                    + this session's *.log files
+                                    (gitignored, redundant with the
+                                    committed JSON/CSV)
   attention_topk_7b_smoke/         AttentionTopK vs RecentK, real checkpoint
   wu2017_generalization_spotcheck/ 200-sample distribution-shift check,
                                     real checkpoint (fine-tuned on Jin2022)
@@ -248,7 +270,15 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     speculative configs, and the Selector x
                                     Speculative ablation: B/D/D') alongside
                                     the 50-sample smoke grids used to select
-                                    thresholds/gamma.
+                                    thresholds/gamma. 2026-08-09 additions
+                                    (this instance, post-asset-recovery):
+                                    20260809T074807Z (50-sample Gate-B MAE
+                                    reproduction), 20260809T075002Z +
+                                    20260809T075305Z (200-sample A/D
+                                    new-instance latency calibration, see
+                                    NEW_INSTANCE_CALIBRATION.md) -- smaller
+                                    scale by design, not a re-run of the
+                                    full-1,698 ablation above.
   consolidated/                    merged tables + all 7 figures: the 3
                                     threshold/MAE/tradeoff figures, mae_cdf.png,
                                     ablation_bars.png, tail_velocity_vs_diff.png,
@@ -407,3 +437,32 @@ Added `docs/final/TEAM_REPORT_20260809.md` (team/선배-facing summary)
 and updated `docs/final/FINAL_RESULTS_SUMMARY.md`'s tail-analysis
 section with the acceptance-mechanism addendum, preserving all existing
 content.
+
+## What changed 2026-08-09 (later same day — Gate-A/B COMPLETE)
+
+Same-day follow-up to the entry above, after the user corrected two
+things: base-weight absence on a fresh instance is normal (not part of
+the asset loss), and the checkpoint/dataset zips were re-uploaded via
+a Google Drive relay to `/root/NetLLM-assets/staging/` (direct `scp`
+had connectivity problems).
+
+Both gates now pass: Gate-A (checksums match `BACKUP_MANIFEST.md`
+exactly, checkpoint/dataset placed at standard paths with the same
+double-nesting correction as 2026-08-02, file-level structure sane,
+dataset test split exactly 1,698) and Gate-B (full base+adapter strict
+load 0/0/0/0/0, 50-sample baseline MAE reproduces the reference to 8
+significant figures). Both recorded as new sections appended to
+`GATE_A_VERIFICATION.md` — the original same-day INCOMPLETE record
+stays in the same file as history, not deleted or overwritten.
+
+Also ran an optional 200-sample new-instance latency calibration
+(`NEW_INSTANCE_CALIBRATION.md`): accuracy direction/magnitude transfers
+across instances, latency does not (this instance runs ~16-18% slower
+in absolute terms than the 2026-08-02 instance) — establishes the rule
+that future latency comparisons should stay within one instance/session.
+
+Updated `docs/final/TEAM_REPORT_20260809.md` with the gate-completion
+status, the handoff zip's actual delivered sha256, and a 3-step
+disaster-recovery procedure summary (backup manifest -> whatever
+transfer channel works -> two-gate verification) for the team to reuse
+next time this project loses assets.
