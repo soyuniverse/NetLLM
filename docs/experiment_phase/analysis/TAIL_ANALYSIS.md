@@ -87,6 +87,70 @@ now confirmed at the individual worst-case level with no exceptions:
 **the tail is a RecentK-2 selection phenomenon, not a speculative-
 decoding one.**
 
+## Acceptance mechanism (2026-08-09 addendum)
+
+Requested follow-up: the full-population distribution of speculative
+accept rate, and whether accepts/rejects follow a pattern by position
+in the 20-step rollout (early/mid/late). Script:
+`scripts/experiment_phase/speculative/accept_rate_distribution.py`.
+Raw output: `results/speculative/consolidated/
+accept_rate_distribution_stats.json`. Unlike the rest of this document,
+this addendum required no GPU/checkpoint/dataset access — it re-reads
+the existing per-sample CSV from the 2026-08-02 run
+(`results/speculative/20260802T101802Z/
+per_sample_threshold=0.35_gamma=8_selector=recent_k:2.csv`), which is
+git-tracked and unaffected by this instance's asset loss (see
+`docs/experiment_phase/assets/ASSET_RECOVERY_VERIFICATION_20260809.md`).
+
+### Full-population accept-rate distribution
+
+![Accept rate distribution](../../../results/speculative/consolidated/accept_rate_histogram.png)
+
+`accept_rate = accepted_sum / (target_forward_count - 1)` (mean
+accepted draft coordinates per draft-verify iteration, excluding the
+initial cache-seeding forward; max possible value is `gamma=8`).
+Across all 1,698 samples: **mean 6.22, median 6.33, std 0.22, min 4.25,
+max 6.33** — a strikingly narrow, right-censored distribution. ~99% of
+samples land in a single histogram bin (6.0–6.33); only a small low
+tail reaches down to 4.25. In other words: at `threshold=0.35`, the
+draft model (`RecentVelocityDraft`, constant-velocity extrapolation) is
+accepted at a high, near-uniform rate almost everywhere in the test
+set — the 4.25–6.0 band is where the tail-analysis degraded samples
+above are concentrated (high-motion-variance histories are exactly
+where constant-velocity extrapolation is least reliable, consistent
+with the rest of this document's findings).
+
+### Iteration-position (early/mid/late step) pattern — blocked, not produced
+
+This sub-analysis cannot be produced from data available on this
+instance. `SpeculativeBlockVerifyPipeline` computes a per-iteration
+accept count in memory
+(`accepted_per_iteration: List[int]`,
+`src/netllm_litevlm/speculative/block_verify.py:98,201,222`), but
+`run_speculative_benchmark.py` only persists the per-sample **sum**
+of that list to CSV (`accepted_sum`,
+`scripts/experiment_phase/speculative/run_speculative_benchmark.py:183,206,365`)
+— the raw per-iteration list itself was never written to disk. Since
+the real checkpoint and dataset are also absent from this instance
+(`ASSET_RECOVERY_VERIFICATION_20260809.md`), it cannot be regenerated
+either. Producing it requires: (1) real assets restored, (2) a small
+harness change to persist `accepted_per_iteration` per sample (e.g. a
+JSON-lines sidecar next to each `per_sample_*.csv`), (3) a fresh
+1,698-sample run. Flagged here rather than approximated from the
+aggregate data above, which cannot distinguish "rejects early" from
+"rejects late" at fixed `accepted_sum`.
+
+What the aggregate data *does* show indirectly: `target_forward_avg`
+for config D is 4.006 (`results/speculative/20260802T101802Z/
+results.csv`), meaning almost every sample takes exactly 1 warmup +
+3 draft-verify iterations to cover the 20-step rollout at `gamma=8`
+(8 + 8 + 4 remaining steps). Combined with the near-ceiling accept
+rate above, draft rejection is infrequent and, when it happens, does
+not on average cost enough accepted coordinates to push a sample into
+a 4th iteration for most of the test set — full per-iteration logging
+would be needed to say more precisely whether rejects cluster in the
+final (4-step) iteration or are spread evenly.
+
 ## Summary (also integrated into `docs/final/FINAL_RESULTS_SUMMARY.md`)
 
 Degradation under config D concentrates in a high-motion-speed,
@@ -96,3 +160,22 @@ bad; most high-motion samples improve. Every one of the top-5% degraded
 samples' error is attributable to RecentK-2 selection, not speculative
 decoding, which composes additively and often slightly offsets rather
 than compounds the selector's error.
+
+### Suggested next work
+
+The data supports one specific, narrow next step: **an adaptive-K
+selector that widens its history window specifically when recent
+motion variance is high**, not a general adaptive-threshold change to
+speculative decoding. The reasoning chain, each link backed by a
+measurement above: (1) the tail is 100%-attributable to RecentK-2
+selection, not speculative decoding, so an intervention in the
+speculative/acceptance layer would be treating the wrong component;
+(2) the tail is concentrated in (not merely correlated with) a
+high-motion-speed, high-variance regime (2.16x, p=3.0e-24); (3) the
+acceptance-rate distribution above is already narrow and near-ceiling
+for the vast majority of samples, so there is little headroom left to
+gain by tuning `gamma`/`threshold` — the leverage is on the
+selector's history-length choice, not the draft-verify loop. A
+threshold/gamma-side "fix" would not be supported by this data; an
+adaptive-K change targeting the same high-variance regime identified
+here would be a direct test of the actual attributed cause.

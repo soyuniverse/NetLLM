@@ -1,0 +1,15 @@
+{
+  "n": 1698,
+  "config": "threshold=0.35_gamma=8_selector=recent_k:2",
+  "accept_rate_avg_accepted_per_iteration": {
+    "mean": 6.223890851982724,
+    "median": 6.333333333333333,
+    "std": 0.2157287618758896,
+    "min": 4.25,
+    "max": 6.333333333333333,
+    "p10": 6.0,
+    "p90": 6.333333333333333
+  },
+  "gamma": 8,
+  "note": "accept_rate = accepted_sum / (target_forward_count - 1); max possible per-iteration value is gamma=8 (all drafted coordinates accepted every iteration)."
+}
