@@ -171,3 +171,66 @@ All four steps pass. Checkpoint and dataset are byte-for-byte
 transferred and structurally sane. Gate-B (full strict load + 50-sample
 MAE reproduction, now possible since the base weights finished
 downloading) follows in this same document.
+
+## 2026-08-09 — Gate-B COMPLETE
+
+Base weights finished downloading during this session
+(`/root/llama2-7b-base/`, both safetensors shards present, ~13 GiB,
+`hf` CLI logged `✓ Downloaded`) — no need to wait further. Ran on the
+same GPU as the rest of this session (RTX 4090 24GB, ~1 MiB used
+beforehand, confirmed idle via `nvidia-smi`).
+
+### Step 1 — full model strict load
+
+Replicates `scripts/experiment_phase/assets/
+verify_checkpoint_strict_load.py`'s exact procedure (that script itself
+refuses to overwrite the existing 2026-08-02
+`experiments/vp/asset_recovery/checkpoint_strict_load.json`, by design
+— re-ran the identical logic inline instead, writing to a dated
+`checkpoint_strict_load_20260809.json` alongside it rather than
+clobbering the original):
+
+```json
+{
+  "checkpoint_loaded": true,
+  "load_seconds": 6.34,
+  "adapter_missing_count": 0,
+  "adapter_unexpected_count": 0,
+  "adapter_value_mismatch_count": 0,
+  "non_plm_missing_count": 0,
+  "non_plm_unexpected_count": 0,
+  "strict_load_pass": true
+}
+```
+
+Full record: `experiments/vp/asset_recovery/checkpoint_strict_load_20260809.json`.
+All five checks 0, matching the original 2026-08-02 result exactly.
+
+### Step 2 — 50-sample baseline MAE reproduction
+
+`run_speculative_benchmark.py --checkpoint-path
+/root/NetLLM-assets/checkpoints/try_llama2_7b --dataset-path
+/root/NetLLM-source/viewport_prediction/data/viewports/Jin2022
+--thresholds 0.35 --gammas 8 --num-samples 50 --device cuda:0`:
+
+| config | MAE | latency median |
+|---|---:|---:|
+| baseline (this session, new instance) | **11.036768085417648** | 680.3 ms |
+| threshold=0.35_gamma=8 (this session) | 11.031369 | 145.6 ms |
+| reference (2026-08-02, prior instance) | 11.036768 | 577.2 ms |
+
+MAE matches the reference to 8 significant figures — effectively exact,
+well inside fp16 noise. Full output:
+`results/speculative/20260809T074807Z/{results.csv,summary.json,summary.md}`.
+Latency differs from the 2026-08-02 reference (680ms vs. 577ms
+baseline) — expected, this is a different physical instance/GPU;
+see `docs/experiment_phase/assets/NEW_INSTANCE_CALIBRATION.md` for the
+dedicated latency calibration this difference motivated.
+
+### Result: Gate-B COMPLETE
+
+Both checks pass. **This instance's checkpoint + dataset + base-model
+assembly is now verified trustworthy for GPU experiments** — accuracy
+numbers transfer across instances (MAE reproduced to 8 significant
+figures); only latency needs a fresh per-instance baseline, per
+`NEW_INSTANCE_CALIBRATION.md`.
