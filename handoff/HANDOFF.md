@@ -71,13 +71,52 @@ checkpoint_era_runtime.py:27`), which you can override with
 `--base-model-path`.
 
 **As of 2026-08-09, none of these three assets exist on the source
-instance this package was built on** — a third asset loss this project
-has hit (see `docs/experiment_phase/assets/
-ASSET_RECOVERY_VERIFICATION_20260809.md`). The interface contracts,
-code, and recommended-config table below are all still valid (verified
-against a real checkpoint in the 2026-08-02 session, git-committed and
-unaffected by this loss); you just need your own copies of the three
-assets above to run anything beyond `smoke_test.py`.
+instance this package was built on.** Two different situations, don't
+conflate them:
+
+- Base Llama2-7b weights being absent on a **fresh** instance is
+  **normal, not a loss** — they're a standard download from the model
+  hub, not something this project's own backups ever covered (see
+  "Downloading the base weights" below).
+- The fine-tuned VP checkpoint and Jin2022 dataset being absent is this
+  project's third actual asset loss (see `docs/experiment_phase/assets/
+  ASSET_RECOVERY_VERIFICATION_20260809.md`, `GATE_A_VERIFICATION.md`) —
+  those only exist as a project-specific backup, and that backup was
+  not present on this instance either.
+
+The interface contracts, code, and recommended-config table below are
+all still valid regardless (verified against a real checkpoint in the
+2026-08-02 session, git-committed and unaffected by either situation);
+you just need your own copies of the three assets above to run anything
+beyond `smoke_test.py`.
+
+### Downloading the base weights
+
+`meta-llama/Llama-2-7b-hf` is a gated model — you need a Hugging Face
+account with access approved, and a token (`huggingface-cli login` or
+`HF_TOKEN` env var) before this will work:
+
+```bash
+hf download meta-llama/Llama-2-7b-hf \
+  --include "*.safetensors" --include "*.json" --include "*.model" \
+  --local-dir /root/llama2-7b-base
+```
+
+**Get `--local-dir` right the first time.** Omitting it (or getting the
+path wrong) makes `hf download` write into your current working
+directory instead — if that happens to be this repo's root, it will
+silently overwrite `README.md` with the model's card and scatter
+`config.json`/`tokenizer.json`/etc. loose into the repo (this happened
+during this package's own development session; recovered with `git
+checkout -- README.md` + deleting the stray files, but avoid it
+happening to you). The path must match whatever you pass as
+`--base-model-path` / `DEFAULT_BASE_MODEL_PATH` above.
+
+Also note: `HF_HUB_ENABLE_HF_TRANSFER` is deprecated in current
+`huggingface_hub` and silently ignored — don't rely on it for speed.
+Transfers now default to the Xet protocol, which is fast without it.
+The download is ~13 GB (fp16-equivalent full-precision safetensors);
+budget accordingly.
 
 ## Quick start
 
