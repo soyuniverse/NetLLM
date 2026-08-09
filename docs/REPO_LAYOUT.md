@@ -105,6 +105,17 @@ docs/
                                     proceed with GPU/checkpoint-independent
                                     work only. See "What changed 2026-08-09"
                                     below.
+                                    GATE_A_VERIFICATION.md: same-day
+                                    follow-up after the user corrected the
+                                    framing (base-weight absence on a
+                                    fresh instance is normal, not a loss --
+                                    only checkpoint/dataset are the actual
+                                    loss). Splits the gate into Gate-A
+                                    (model-independent; still INCOMPLETE,
+                                    checkpoint/dataset zips remain absent)
+                                    and Gate-B (needs the base-weight
+                                    re-download in progress + the
+                                    checkpoint/dataset zips; deferred).
     analysis/                      TAIL_ANALYSIS.md: which samples degrade
                                     under the headline combined config and
                                     why (high-motion-variance regime,
