@@ -21,6 +21,25 @@ it appeared in later passes.
 
 ```text
 /root/NetLLM/                      this repository
+  handoff/                         self-contained integration package for
+                                    하영 (teammate) -- no repo history needed,
+                                    ~30min integration target, see
+                                    handoff/HANDOFF.md. HANDOFF.md (quick
+                                    start + module map + recommended
+                                    config), INTERFACE_SPEC.md (selector
+                                    contract, pipeline call contract, exact
+                                    AdaLoRA integration point),
+                                    example_integration.py, smoke_test.py
+                                    (standalone CPU gate check, no
+                                    checkpoint needed). Also packaged as
+                                    handoff_soyun_v1.zip at the repo root
+                                    (gitignored like all zips, see
+                                    manifests/final_run_manifest.md-style
+                                    provenance note in
+                                    docs/final/TEAM_REPORT_20260809.md for
+                                    its sha256) -- verified runnable from a
+                                    fresh repo copy at a different absolute
+                                    path.
 /root/llama2-7b-base/              base Llama2-7b weights (config, tokenizer,
                                     *.safetensors, LICENSE) -- NOT in the repo,
                                     matches DEFAULT_BASE_MODEL_PATH in
@@ -49,7 +68,14 @@ docs/
                                     performance -> conclusion/next-work,
                                     same structure as the 7.26 report;
                                     includes a section 6 mapping all 7
-                                    figures to a presentation flow)
+                                    figures to a presentation flow;
+                                    2026-08-09: tail-analysis section
+                                    gained an acceptance-mechanism
+                                    addendum, existing content preserved)
+    TEAM_REPORT_20260809.md        ~2-page team/선배 summary: results
+                                    table, implementation (bullet style),
+                                    tail-analysis key findings, handoff/
+                                    package pointer, open follow-ups
     BACKUP_MANIFEST.md             off-instance backup record (this
                                     instance lost checkpoint/dataset
                                     assets twice already): file list,
@@ -69,13 +95,30 @@ docs/
     assets/                        ASSET_RECOVERY_VERIFICATION.md: RUNBOOK
                                     absence, zip-structure mismatches found
                                     and resolved, strict-load + dataset +
-                                    sample-for-sample MAE re-verification
+                                    sample-for-sample MAE re-verification.
+                                    ASSET_RECOVERY_VERIFICATION_20260809.md:
+                                    a THIRD asset loss -- unlike the two
+                                    prior recoveries, no assets were found
+                                    anywhere on this instance (not even the
+                                    staging zips). Gate FAILED; documents
+                                    what was checked and the decision to
+                                    proceed with GPU/checkpoint-independent
+                                    work only. See "What changed 2026-08-09"
+                                    below.
     analysis/                      TAIL_ANALYSIS.md: which samples degrade
                                     under the headline combined config and
                                     why (high-motion-variance regime,
                                     attributable to RecentK-2 selection,
                                     not speculative decoding -- Spearman
-                                    correlations + Mann-Whitney test)
+                                    correlations + Mann-Whitney test).
+                                    2026-08-09 addendum: full-population
+                                    acceptance-rate distribution (narrow,
+                                    near-ceiling, mean 6.22/8) + why an
+                                    iteration-position accept breakdown
+                                    isn't producible from data persisted on
+                                    this instance, + a scoped "next work"
+                                    paragraph (adaptive-K, not
+                                    adaptive-threshold).
     phase0/ .. phase3a/, recovery/, resume/    earlier phases, stable
   REPO_LAYOUT.md                   this file
   MEETING_NOTES.md, RESEARCH_DIRECTION.md, *.pdf   project-level references
@@ -161,7 +204,11 @@ scripts/experiment_phase/
                                     vs. history motion speed/acceleration/
                                     accept rate, Spearman + Mann-Whitney),
                                     wu2017_generalization_spotcheck.py
-                                    (200-sample distribution-shift check)
+                                    (200-sample distribution-shift check),
+                                    accept_rate_distribution.py (2026-08-09:
+                                    full-population accept-rate histogram,
+                                    reads only the existing per-sample CSV --
+                                    no GPU/checkpoint/dataset needed)
   assets/                          verify_checkpoint_strict_load.py
                                     (adapter + non-PLM strict-load re-check,
                                     independent of checkpoint_era_runtime's
@@ -197,7 +244,10 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     tail_acceptrate_vs_diff.png,
                                     final_table.{csv,md},
                                     paired_stats_combined_vs_baseline.json,
-                                    tail_analysis_stats.json
+                                    tail_analysis_stats.json,
+                                    accept_rate_histogram.png +
+                                    accept_rate_distribution_stats.json
+                                    (2026-08-09 addendum, 8th figure)
 results/final_<date>/              copies (not moves) of the final table +
                                     5 figures for handoff -- its own
                                     README.md says explicitly that the
@@ -310,3 +360,39 @@ every file. Added `*.tar.gz`/`*.tar`/`*.zip` to `.gitignore` as a
 defense-in-depth safety net (the backup directory was already outside
 the repo, so this doesn't change what gets committed, but closes a real
 gap for the repo tree generally).
+
+## What changed 2026-08-09 (third asset loss + handoff package + tail
+addendum + team report)
+
+**Third asset loss on this instance**: `/root/NetLLM-assets/` (staging,
+checkpoints), `/root/NetLLM-source/.../Jin2022`, `/root/llama2-7b-base/`,
+and `/root/backup_20260802/` are all entirely absent — not merely
+unverified, not present anywhere on the filesystem. The session brief
+believed a backup had been restored to staging; it had not. Documented
+in `docs/experiment_phase/assets/ASSET_RECOVERY_VERIFICATION_20260809.md`
+rather than silently worked around. Given this, the session proceeded
+with GPU/checkpoint/dataset-independent work only, citing (not
+recomputing) the 2026-08-02 session's git-tracked, already-gated
+results wherever a number was needed.
+
+Added `handoff/` (new top-level directory, see the entry above) — a
+self-contained integration package for 하영, built and verified without
+needing any of the missing assets (`smoke_test.py` uses a tiny CPU
+model, no checkpoint). Verified it runs correctly from a fresh copy of
+this repo at a different absolute path, both as a plain directory and
+extracted from `handoff_soyun_v1.zip`.
+
+Extended `docs/experiment_phase/analysis/TAIL_ANALYSIS.md` with an
+acceptance-mechanism addendum (full-population accept-rate histogram,
+`scripts/experiment_phase/speculative/accept_rate_distribution.py` +
+`results/speculative/consolidated/accept_rate_histogram.png`) — this
+one required no GPU access either, since it re-reads an existing
+git-tracked per-sample CSV. The requested finer iteration-position
+breakdown could not be produced (raw per-iteration accept data was
+computed in memory during the original run but never persisted to
+disk) and is documented as blocked rather than approximated.
+
+Added `docs/final/TEAM_REPORT_20260809.md` (team/선배-facing summary)
+and updated `docs/final/FINAL_RESULTS_SUMMARY.md`'s tail-analysis
+section with the acceptance-mechanism addendum, preserving all existing
+content.
