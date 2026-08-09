@@ -174,6 +174,22 @@ accuracy are independent, consistent with the additive-composition
 finding above. A video-level check ruled out any single test video
 dominating the tail.
 
+**Acceptance mechanism (2026-08-09 addendum):** the full-population
+accept-rate distribution is narrow and near-ceiling — mean 6.22 of a
+possible 8 (median 6.33, std 0.22), with ~99% of samples in a single
+histogram bin and only a small low tail down to 4.25
+(`results/speculative/consolidated/accept_rate_histogram.png`; stats in
+`accept_rate_distribution_stats.json`). The draft model (constant-
+velocity extrapolation) is accepted at a high, near-uniform rate almost
+everywhere; the low-acceptance tail is where the high-motion-variance
+degraded samples above concentrate. A finer breakdown by rollout
+position (early/mid/late step) was requested but is **not
+producible from data on this instance** — per-iteration accept counts
+are computed in memory (`block_verify.py`'s `accepted_per_iteration`)
+but only their per-sample sum was ever persisted to CSV; see
+`TAIL_ANALYSIS.md`'s "Acceptance mechanism" section for the exact code
+locations and what a future run would need to capture it.
+
 ### Generalization spot-check — Wu2017 (unseen during Jin2022 fine-tuning)
 
 Full output: `experiments/vp/wu2017_generalization_spotcheck/spotcheck_result.json`.
