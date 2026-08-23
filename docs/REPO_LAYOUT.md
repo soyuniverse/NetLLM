@@ -222,6 +222,26 @@ docs/
                                     tested (it was: TAIL_ANALYSIS.md's own
                                     population-wide rho=-0.400 prediction),
                                     not by pass/fail.
+                                    GENERALIZATION_WU2017.md (2026-08-23,
+                                    later same session): full A/B/C/D
+                                    comparison on Wu2017 (unseen during
+                                    fine-tuning), 300 evenly-strided
+                                    samples of the 1,395-sample test
+                                    split -- extends the earlier
+                                    200-sample A-vs-D-only spot-check
+                                    (experiments/vp/
+                                    wu2017_generalization_spotcheck/) to
+                                    all 4 configs with per-sample accept-
+                                    rate capture. Every headline property
+                                    transfers with no meaningful
+                                    degradation: selector gain −15.25%
+                                    (in-dist.) vs. −14.39% (unseen);
+                                    accept rate within ~1pp of in-dist.
+                                    for both C and D; additive
+                                    composition holds (D−B ≈ C−A on
+                                    Wu2017 too). Closes the top-priority
+                                    gap flagged in
+                                    PAPER_ANALYSIS_CANDIDATES.md.
     phase0/ .. phase3a/, recovery/, resume/    earlier phases, stable
   REPO_LAYOUT.md                   this file
   MEETING_NOTES.md, RESEARCH_DIRECTION.md, *.pdf   project-level references
@@ -303,12 +323,22 @@ scripts/experiment_phase/
                                     run_speculative_benchmark.py (the real
                                     benchmark harness -- --checkpoint-path/
                                     --dataset-path resolve for real;
-                                    --selector "none"/"identity"/"recent_k:K"
+                                    --selector "none"/"identity"/"recent_k:K"/
+                                    "adaptive_k:V_LOW:V_HIGH"
                                     wraps both the baseline and speculative
                                     pipelines with the same selector
                                     instance, for the combination ablation;
                                     --dry-run still available for machinery
-                                    self-tests), consolidate_and_plot_results.py
+                                    self-tests; 2026-08-23 additions:
+                                    --dataset-name (defaults "Jin2022",
+                                    also "Wu2017" -- create_dataset(...)
+                                    branches on this string internally)
+                                    and --sampling {first,even} (evenly-
+                                    strided deterministic subsampling for
+                                    a fixed-size slice of a much larger
+                                    test split, used for the Wu2017
+                                    generalization run below)),
+                                    consolidate_and_plot_results.py
                                     (threshold/MAE/tradeoff figures),
                                     paired_stats_and_cdf.py (per-sample
                                     paired diffs + CDF across baseline/
@@ -389,7 +419,12 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     adaptive_k_fp_diagnosis_stats.json
                                     (true/false-positive separation
                                     diagnosis, see ADAPTIVE_K_RESULTS.md's
-                                    "후속 진단" section).
+                                    "후속 진단" section). 2026-08-23
+                                    (later same session, 12th/13th
+                                    figures): generalization_mae_
+                                    comparison.png + generalization_
+                                    accept_rate_comparison.png, see
+                                    GENERALIZATION_WU2017.md above.
 results/final_<date>/              copies (not moves) of the final table +
                                     5 figures for handoff -- its own
                                     README.md says explicitly that the
@@ -448,6 +483,44 @@ patches/experiment_phase/          proposed-but-not-applied diffs (e.g. the
                                     accelerate/huggingface-hub dependency fix)
 
 configs/                           benchmark config JSON (vp_benchmark.json)
+
+paper/                              NEW top-level directory, 2026-08-23 --
+                                    paper-writing track, deliberately
+                                    separate from results/presentation_*/
+                                    (slide deck output): the two serve
+                                    different audiences and formats
+                                    (camera-ready figures vs. talk
+                                    slides) and are never meant to merge.
+  figures/                          8 figures (fig1..fig8), each as
+                                    {name}_1col.{pdf,png} (single-column,
+                                    ~3.3in) and {name}_2col.{pdf,png}
+                                    (double-column, ~7.0in) -- vector PDF
+                                    + 300dpi PNG, Liberation Serif
+                                    8-9pt, Okabe-Ito colorblind-safe
+                                    palette with marker/hatch
+                                    redundancy for grayscale print (see
+                                    scripts/experiment_phase/paper/
+                                    paper_style.py for the shared style
+                                    module). fig1 is a hand-drawn system
+                                    schematic (no data); fig2-8 read from
+                                    already-git-tracked run directories,
+                                    no new experiments except fig8's
+                                    Wu2017 data (see below).
+    captions.md                    one caption per figure, English,
+                                    understandable from the figure alone
+  PAPER_ASSETS.md                  claim-to-evidence mapping table (10
+                                    claims: figure/table, key numbers,
+                                    statistical basis, limitations),
+                                    2 LaTeX booktabs tables (main
+                                    ablation; adaptive-K + separation
+                                    diagnosis), a reproducibility block
+                                    (model/data/hyperparameters/hardware
+                                    /protocol paragraph, ready to paste
+                                    into an Experimental Setup section,
+                                    including the cross-instance latency
+                                    variance footnote), and a
+                                    priority-ordered gap list with rough
+                                    GPU-time estimates for each item.
 
 Root-level compatibility symlinks (see FILE_REORGANIZATION_RESULT.md for
 why these exist instead of the regular files living at the root):
