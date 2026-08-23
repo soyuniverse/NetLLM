@@ -1,0 +1,3 @@
+config,threshold,gamma,num_samples,mae,corrected_rmse,test_loss,latency_median_ms,target_forward_avg,accepted_per_iteration_avg,peak_allocated_mib,peak_reserved_mib,metric_valid
+baseline_selector=recent_k:2,,,300,13.606910356814714,27.33808227739539,,458.53761048056185,20.0,,12987.4423828125,13086.0,True
+threshold=0.35_gamma=8_selector=recent_k:2,0.35,8,300,13.64648620796602,27.399367898510814,,98.2266734354198,4.01,6.171650055370986,12991.78662109375,13086.0,True

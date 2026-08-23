@@ -117,9 +117,10 @@ def _load_samples(args, dry_run: bool) -> List[Any]:
     from config import cfg
     from dataset.load_dataset import create_dataset
 
-    cfg.dataset["Jin2022"] = str(args.dataset_path)
+    dataset_name = getattr(args, "dataset_name", "Jin2022")
+    cfg.dataset[dataset_name] = str(args.dataset_path)
     test_dataset = create_dataset(
-        "Jin2022",
+        dataset_name,
         his_window=HIS_WINDOW,
         fut_window=FUT_WINDOW,
         trim_head=30,
@@ -128,27 +129,41 @@ def _load_samples(args, dry_run: bool) -> List[Any]:
         step=15,
         include=["test"],
     )[0]
-    count = min(args.num_samples, len(test_dataset))
-    return [test_dataset[i] for i in range(count)]
+    sampling = getattr(args, "sampling", "first")
+    total = len(test_dataset)
+    count = min(args.num_samples, total)
+    if sampling == "even":
+        # Evenly-spaced stride sampling across the full test split (not
+        # clustered at the start) -- deterministic given (total, count),
+        # no RNG/seed involved; the stride itself is the reproducibility
+        # parameter, recorded in the run's summary.json.
+        stride = max(1, total // count)
+        indices = list(range(0, total, stride))[:count]
+    else:
+        indices = list(range(count))
+    return [test_dataset[i] for i in indices]
 
 
-def _normalize(history_np, future_np, dry_run: bool, device: str, dtype):
+def _normalize(history_np, future_np, dry_run: bool, device: str, dtype, dataset_name: str = "Jin2022"):
     # dry_run's synthetic samples are already generated in real-angle units
     # (see _synthetic_sample) specifically so this same normalization path
     # applies to both -- no separate unnormalized code path to drift from
-    # the real one.
+    # the real one. normalize_data's `dataset` argument is unused by its
+    # own implementation (same fixed roll/pitch/yaw scale for every
+    # dataset this project uses) -- threaded through anyway for clarity
+    # and in case that changes.
     del dry_run
     sys.path.insert(0, str(UPSTREAM_VP_ROOT))
     from utils.normalize import normalize_data
 
     history_raw = torch.from_numpy(history_np).unsqueeze(0)
     future_raw = torch.from_numpy(future_np).unsqueeze(0)
-    history = normalize_data(history_raw, "Jin2022").to(device, dtype=dtype)
+    history = normalize_data(history_raw, dataset_name).to(device, dtype=dtype)
     return history, future_raw
 
 
 def _run_pipeline_over_samples(
-    pipeline, samples, dry_run: bool, device: str, dtype
+    pipeline, samples, dry_run: bool, device: str, dtype, dataset_name: str = "Jin2022"
 ) -> Dict[str, Any]:
     sys.path.insert(0, str(UPSTREAM_VP_ROOT))
     from utils.normalize import denormalize_data
@@ -162,7 +177,7 @@ def _run_pipeline_over_samples(
     is_cuda = device.startswith("cuda")
 
     for sample_id, (history_np, future_np, info) in enumerate(samples):
-        history, future = _normalize(history_np, future_np, dry_run, device, dtype)
+        history, future = _normalize(history_np, future_np, dry_run, device, dtype, dataset_name)
 
         def _call():
             return pipeline.inference(history, future, info)
@@ -183,7 +198,7 @@ def _run_pipeline_over_samples(
         # ([-1,1]-ish, Tanh-bounded) prediction; target is already
         # raw-degree (see _normalize). Denormalize before comparing, same
         # as run_llama_selector_benchmark.py's `prediction_norm * scale`.
-        prediction_degrees = denormalize_data(prediction.float(), "Jin2022")
+        prediction_degrees = denormalize_data(prediction.float(), dataset_name)
         target_float = target.float()
         predictions.append(prediction_degrees.cpu())
         targets.append(target_float.cpu())
@@ -287,6 +302,19 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint-path", type=Path, default=None)
     parser.add_argument("--dataset-path", type=Path, default=None)
+    parser.add_argument(
+        "--dataset-name", type=str, default="Jin2022",
+        help='Dataset name create_dataset(...) branches on -- "Jin2022" '
+        '(default) or "Wu2017". Must match the dataset actually present '
+        "at --dataset-path.",
+    )
+    parser.add_argument(
+        "--sampling", type=str, default="first", choices=["first", "even"],
+        help='"first" (default): first --num-samples rows of the test '
+        'split. "even": --num-samples rows evenly strided across the '
+        "full test split (deterministic, no RNG) -- for a fixed-size "
+        "subset of a much larger split.",
+    )
     parser.add_argument("--base-model-path", type=Path, default=None)
     # acceptance_threshold lives in SpeculativeBlockVerifyPipeline's own
     # comparison space: normalized (Tanh-bounded, ~[-1,1] per channel)
@@ -389,7 +417,7 @@ def main() -> int:
 
     baseline_pipeline = LlamaOldSelectablePipeline(model, selector=selector)
     _reset_memory(device)
-    baseline_run = _run_pipeline_over_samples(baseline_pipeline, samples, args.dry_run, device, dtype)
+    baseline_run = _run_pipeline_over_samples(baseline_pipeline, samples, args.dry_run, device, dtype, args.dataset_name)
     baseline_run["device"] = device
     baseline_row = _build_row(f"baseline{selector_suffix}", None, None, baseline_run, metric_available)
     rows.append(baseline_row)
@@ -402,7 +430,7 @@ def main() -> int:
                 model, selector=selector, gamma=gamma, acceptance_threshold=threshold
             )
             _reset_memory(device)
-            run = _run_pipeline_over_samples(spec_pipeline, samples, args.dry_run, device, dtype)
+            run = _run_pipeline_over_samples(spec_pipeline, samples, args.dry_run, device, dtype, args.dataset_name)
             run["device"] = device
             config_name = f"threshold={threshold}_gamma={gamma}{selector_suffix}"
             row = _build_row(config_name, threshold, gamma, run, metric_available)
@@ -437,6 +465,8 @@ def main() -> int:
         "checkpoint_loaded": checkpoint_loaded,
         "metric_available": metric_available,
         "num_samples": len(samples),
+        "dataset_name": args.dataset_name,
+        "sampling": args.sampling,
         "thresholds": thresholds,
         "gammas": gammas,
         "accuracy_degradation_tolerance": ACCURACY_DEGRADATION_TOLERANCE,
