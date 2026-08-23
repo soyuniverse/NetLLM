@@ -80,6 +80,20 @@ docs/
                                     instance lost checkpoint/dataset
                                     assets twice already): file list,
                                     sizes, sha256, scp download commands
+    PAPER_ANALYSIS_CANDIDATES.md   2026-08-23: every analysis result to
+                                    date (additive composition, tail
+                                    attribution, high-variance tail,
+                                    acceptance ceiling, threshold
+                                    insensitivity, AttentionTopK negative
+                                    result, recency-dominance evidence,
+                                    threshold=0 gate, Wu2017 spot-check)
+                                    tabulated for paper placement --
+                                    one-line claim + evidence + figure +
+                                    body/appendix/talk-only recommendation
+                                    + strength rating per item, 50-sample
+                                    and spot-check items explicitly
+                                    flagged rather than presented as
+                                    full-scale
   implementation/                  implementation explanations (how the
                                     wrapper code works, not phase evidence)
   experiment_phase/                phase-specific evidence, one dir per phase
@@ -131,6 +145,18 @@ docs/
                                     is instance-specific (~16-18% higher
                                     absolute on this GPU) and should never
                                     be diffed across instances directly.
+                                    GATE_VERIFICATION_20260823.md +
+                                    NEW_INSTANCE_CALIBRATION_20260823.md:
+                                    fourth physical instance, same gate
+                                    procedure re-run end to end (zip
+                                    checksums, strict load, 50-sample MAE
+                                    reproduction to 15 significant figures,
+                                    200-sample A/D calibration) -- this
+                                    instance's own environment also needed
+                                    transformers/peft/accelerate/opencv/
+                                    numpy reinstalled to the pinned
+                                    requirements-vp.txt versions before any
+                                    of this could run.
     analysis/                      TAIL_ANALYSIS.md: which samples degrade
                                     under the headline combined config and
                                     why (high-motion-variance regime,
@@ -145,6 +171,23 @@ docs/
                                     this instance, + a scoped "next work"
                                     paragraph (adaptive-K, not
                                     adaptive-threshold).
+                                    ADAPTIVE_K_RESULTS.md (2026-08-23):
+                                    the adaptive-K attempt itself --
+                                    NEGATIVE RESULT at full 1,698-sample
+                                    scale (overall MAE +8.53% vs. plain
+                                    RecentK-2+speculative), even though
+                                    the mechanism improves its target
+                                    84-sample degraded group (-12.8% mean
+                                    MAE) at negligible latency cost. Root
+                                    cause diagnosed: the motion-speed
+                                    threshold has poor precision (only
+                                    63/445 widened samples were true
+                                    positives), and TAIL_ANALYSIS.md's own
+                                    population-wide negative correlation
+                                    means the 382 false positives get hurt
+                                    at far greater volume than the 63 true
+                                    positives get helped. Not tuned
+                                    further, per this task's own scope.
     phase0/ .. phase3a/, recovery/, resume/    earlier phases, stable
   REPO_LAYOUT.md                   this file
   MEETING_NOTES.md, RESEARCH_DIRECTION.md, *.pdf   project-level references
@@ -156,7 +199,20 @@ src/netllm_litevlm/                the only package; nothing here wraps or
   selectors/                       IdentitySelector, RecentKSelector, base,
                                     attention_topk.py (AttentionTopKSelector:
                                     top-K by single-decoder-layer attention,
-                                    drop-in BaseSelector/SelectionOutput)
+                                    drop-in BaseSelector/SelectionOutput),
+                                    adaptive_k.py (AdaptiveKSelector, added
+                                    2026-08-23: widens/narrows RecentK's K
+                                    by recent history motion speed --
+                                    degrees/step, identical definition to
+                                    tail_analysis.py's motion_stats() --
+                                    against v_low/v_high thresholds derived
+                                    from TAIL_ANALYSIS.md's degraded-group
+                                    quantiles; requires
+                                    context["history"] on the selector
+                                    call, a backward-compatible addition to
+                                    both checkpoint-era pipelines' contexts;
+                                    see docs/experiment_phase/analysis/
+                                    ADAPTIVE_K_RESULTS.md)
   evaluation/                      vp_metrics.py, runtime_benchmark.py --
                                     reused by scripts instead of
                                     reimplementing MAE/RMSE/latency math
@@ -288,12 +344,42 @@ results/speculative/<timestamp>/   run_speculative_benchmark.py output
                                     tail_analysis_stats.json,
                                     accept_rate_histogram.png +
                                     accept_rate_distribution_stats.json
-                                    (2026-08-09 addendum, 8th figure)
+                                    (2026-08-09 addendum, 8th figure).
+                                    2026-08-23 addendum (9th/10th figures):
+                                    adaptive_k_degraded_before_after.png,
+                                    adaptive_k_distribution_histogram.png +
+                                    adaptive_k_results_stats.json -- see
+                                    ADAPTIVE_K_RESULTS.md above.
 results/final_<date>/              copies (not moves) of the final table +
                                     5 figures for handoff -- its own
                                     README.md says explicitly that the
                                     results/speculative/ originals are
                                     authoritative if they ever diverge
+results/presentation_20260816/     module-by-module slide package (2026-08-23
+                                    session): module1_token_selection.png
+                                    (RecentK vs AttentionTopK vs baseline,
+                                    K-sweep; 50-sample basis, K=2 RecentK
+                                    also confirmed at full 1,698-sample
+                                    scale, both noted in-figure),
+                                    module2_speculative.png (forward-count
+                                    reduction + threshold-sweep MAE
+                                    insensitivity, both full 1,698-sample),
+                                    module3_combination.png (mae_cdf.png
+                                    re-rendered for presentation with a
+                                    cleaner legend + additive-composition
+                                    annotation, full 1,698-sample),
+                                    summary_table.{png,md} (A/B/C/D full
+                                    1,698-sample table), presentation_
+                                    storyline.md (10-minute talk structure,
+                                    time budget per slide, anticipated
+                                    question + source path per slide). Every
+                                    number traces to an already-git-tracked
+                                    run directory (footnoted per figure) --
+                                    no new experiments behind this package,
+                                    reorganization of existing verified
+                                    results only. Generated by
+                                    scripts/experiment_phase/speculative/
+                                    build_presentation_figures.py.
 
 manifests/{llama,final}/           inventories and SHA-256 checksums for the
                                     prior reorganization pass
