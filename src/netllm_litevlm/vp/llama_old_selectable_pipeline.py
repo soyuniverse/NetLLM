@@ -80,6 +80,7 @@ class LlamaOldSelectablePipeline(nn.Module):
                     "task": "viewport_prediction",
                     "source": "checkpoint-era",
                     "stage": "initial_history",
+                    "history": history,
                 },
             )
             if sequence.is_cuda:

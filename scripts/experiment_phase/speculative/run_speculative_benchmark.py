@@ -39,7 +39,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from netllm_litevlm.evaluation.runtime_benchmark import benchmark_callable
 from netllm_litevlm.evaluation.vp_metrics import evaluate_vp_metrics
-from netllm_litevlm.selectors import BaseSelector, IdentitySelector, RecentKSelector
+from netllm_litevlm.selectors import (
+    AdaptiveKSelector,
+    BaseSelector,
+    IdentitySelector,
+    RecentKSelector,
+)
 from netllm_litevlm.speculative import SpeculativeBlockVerifyPipeline
 from netllm_litevlm.vp.checkpoint_era_runtime import (
     DEFAULT_BASE_MODEL_PATH,
@@ -52,13 +57,18 @@ FUT_WINDOW = 20
 
 
 def _build_selector(spec: str) -> Optional[BaseSelector]:
-    """Parses --selector: "none" (default), "identity", or "recent_k:K"."""
+    """Parses --selector: "none" (default), "identity", "recent_k:K", or
+    "adaptive_k:V_LOW:V_HIGH" (degrees/step thresholds; k_low=2, k_mid=4,
+    k_high=10 fixed, matching AdaptiveKSelector's defaults)."""
     if spec == "none":
         return None
     if spec == "identity":
         return IdentitySelector()
     if spec.startswith("recent_k:"):
         return RecentKSelector(int(spec.split(":", 1)[1]))
+    if spec.startswith("adaptive_k:"):
+        v_low_str, v_high_str = spec.split(":", 1)[1].split(":")
+        return AdaptiveKSelector(v_low=float(v_low_str), v_high=float(v_high_str))
     raise ValueError(f"unsupported --selector spec: {spec!r}")
 HIS_WINDOW = 10
 
@@ -192,6 +202,7 @@ def _run_pipeline_over_samples(
             prediction_degrees, target_float, checkpoint_available=True
         )
         video, user, timestep = int(info[0]), int(info[1]), int(info[2])
+        selection_output = getattr(pipeline, "last_selection_output", None)
         per_sample.append(
             {
                 "sample_id": sample_id,
@@ -207,6 +218,9 @@ def _run_pipeline_over_samples(
                     sum(accepted_this_sample) if accepted_this_sample is not None else None
                 ),
                 "finite": bool(torch.isfinite(prediction_degrees).all().item()),
+                "selected_k": (
+                    selection_output.selected_length if selection_output is not None else None
+                ),
             }
         )
 
@@ -287,7 +301,8 @@ def main() -> int:
     parser.add_argument("--gammas", type=str, default="2,4,8")
     parser.add_argument(
         "--selector", type=str, default="none",
-        help='"none" (default), "identity", or "recent_k:K". Applied to '
+        help='"none" (default), "identity", "recent_k:K", or '
+        '"adaptive_k:V_LOW:V_HIGH". Applied to '
         "both the baseline pipeline and every speculative config in this "
         "run -- construct separate runs to compare with/without a selector.",
     )
@@ -362,7 +377,7 @@ def main() -> int:
         columns = [
             "sample_id", "video", "user", "timestep", "mae", "corrected_rmse",
             "mean_angular_error", "latency_ms", "target_forward_count",
-            "accepted_sum", "finite",
+            "accepted_sum", "finite", "selected_k",
         ]
         with path.open("w", newline="") as stream:
             writer = csv.DictWriter(stream, fieldnames=columns)

@@ -126,6 +126,7 @@ class SpeculativeBlockVerifyPipeline(nn.Module):
                     "task": "viewport_prediction",
                     "source": "speculative-block",
                     "stage": "initial_history",
+                    "history": history,
                 },
             )
             selector_calls = 1
