@@ -213,6 +213,65 @@ variance, direction reversals, or a learned classifier) rather than raw
 average speed — but that is a new design, out of scope for this
 session's time-boxed, lower-priority pass.
 
-No sentence added to `presentation_storyline.md`'s future-work slide and
-no row added to `PAPER_ANALYSIS_CANDIDATES.md`, per this task's own
-instruction to only do so on success.
+**2026-08-23 correction to the reflection-only closing above**: this
+negative result is now reflected in `presentation_storyline.md` (a
+dedicated 심층 분석 slide) and `PAPER_ANALYSIS_CANDIDATES.md` — narrative
+and paper value is judged by whether a result tests a real prediction,
+not by whether the tested hypothesis held. This result is a direct
+experimental test of TAIL_ANALYSIS.md's own population-wide negative
+correlation (ρ=−0.400) prediction, which is exactly that kind of result.
+
+## 후속 진단: 왜 63개는 개선되고 382개는 악화되는가 (2026-08-23)
+
+No new model/GPU run — history features only, re-derived from the
+dataset the same way `tail_analysis.py` does (deterministic
+`create_dataset(...)`, `sample_id` lines up with per-sample CSV row
+order). Script:
+`scripts/experiment_phase/speculative/adaptive_k_false_positive_diagnosis.py`.
+Raw output:
+`results/speculative/consolidated/adaptive_k_fp_diagnosis_stats.json`.
+
+Five history-derived features compared between the 63 true-positive and
+382 false-positive widened samples (Mann-Whitney U → AUC as separation
+strength, 0.5 = no separation; Cohen's d as effect size):
+
+| metric | TP mean | FP mean | AUC | Cohen's d | p (Mann-Whitney) |
+|---|---:|---:|---:|---:|---:|
+| direction reversals (avg over 3 channels) | 1.894 | 1.741 | 0.555 | −0.19 | 0.158 |
+| velocity std (deg/step) | 2.724 | 2.636 | 0.546 | −0.07 | 0.246 |
+| velocity CV (std/mean) | 0.705 | 0.654 | 0.544 | −0.18 | 0.260 |
+| avg acceleration (deg/step²) | 2.051 | 2.071 | 0.532 | +0.02 | 0.420 |
+| avg velocity (deg/step, control check) | 4.036 | 4.148 | 0.488 | +0.07 | 0.766 |
+
+![True/false positive separation](../../../results/speculative/consolidated/adaptive_k_fp_diagnosis_boxplot.png)
+
+**No usable separating signal exists among any of these five features.**
+Every AUC sits within 0.055 of the no-separation value (0.5); every
+Cohen's d is below 0.2 (conventionally "negligible"); every p-value is
+far above 0.05. The control check confirms the two groups are
+well-matched on raw velocity itself (AUC 0.488, essentially coin-flip),
+as expected since both passed the same `v_low`/`v_high` classification
+— so the failure to separate on the *other* four features is not an
+artifact of an unbalanced velocity comparison. The boxplot's visibly
+heavy overlap for the best-ranked metric (direction reversals, still
+only AUC=0.555) confirms this is not a borderline case obscured by a
+weak statistical test — the distributions are genuinely near-identical.
+
+**Conclusion: the 10-step history alone does not contain the
+information needed to distinguish "widening helps" from "widening
+hurts" samples**, at least not in any of the four natural motion-
+irregularity features tested (velocity variability, coefficient of
+variation, acceleration magnitude, direction-reversal count). This is
+itself the answer, not an inconclusive result: TAIL_ANALYSIS.md's
+fan-shaped-variance finding said high velocity predicts *outcome
+variance* rather than a deterministic direction; this diagnosis shows
+that variance is not further resolvable from the same 10-step window
+using simple derived statistics — whatever determines which way a
+given high-velocity sample breaks is not encoded in these features. A
+future attempt at this problem would need information the current
+10-step history/motion-feature framing does not carry (e.g. the actual
+future trajectory shape being predicted, video/scene content, or a
+learned representation rather than hand-derived scalar statistics) — a
+new design direction, out of scope for this session. **No new selector
+was implemented from this diagnosis, per this task's scope**: diagnosis
+only, implementation is a decision for next week.
